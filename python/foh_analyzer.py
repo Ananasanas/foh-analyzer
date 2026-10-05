@@ -29,7 +29,7 @@ except Exception as e:  # missing module or missing PortAudio
     SD_ERR = str(e) or e.__class__.__name__
 
 APP = 'FOH Analyzer'
-VERSION = '1.1'
+VERSION = '1.2'
 SETTINGS = os.path.join(os.path.expanduser('~'), '.foh_analyzer.json')
 TUT = json.loads('{"WALK": [{"t": "Set up the measurement mic", "x": "Use an omnidirectional measurement mic on a stand at ear height (about 1.2 m seated, 1.7 m standing), pointing up or toward the speakers. Keep it at least 1 m from walls and off tables and consoles. In your computer\'s sound settings turn off any mic enhancements, and set the interface gain so speech near the mic peaks around −30 dBFS.", "tips": []}, {"t": "Calibrate the level", "x": "Fit a 94 dB calibrator over the capsule and use the calibrator tab, or match a trusted SPL meter. RT60 and the response shape do not need calibration, but noise rating and level checks do. Skip this if you only care about the room\'s sound.", "tips": []}, {"t": "Load the mic file", "x": "If your mic came with a calibration file (UMIK, Dayton and similar), load it so the high frequencies are measured correctly. Optional for most room work.", "tips": []}, {"t": "Describe the room", "x": "Enter length, width and height in metres and choose what the room is used for. This sets the RT60 target, the Schroeder frequency and the predicted room modes.", "tips": []}, {"t": "Measure background noise", "x": "With the system muted and the room as it will be during use (air conditioning on, no music), measure 5 seconds of background noise. You get an NR rating per octave.", "tips": []}, {"t": "Set the sweep level", "x": "Turn the amplifier or mixer output down first. Run one sweep at −30 dBFS, then raise the level until the decay range reads 45 dB or more without clipping. The sweep is a rising tone from 20 Hz to 20 kHz. Warn people in the room, and protect tweeters: never start loud.", "tips": []}, {"t": "Measure several positions", "x": "Measure 3 to 6 listening positions: FOH, centre, left, right, rear, balcony. Avoid the exact centre line and spots right against walls. Name each one before you press Measure. The advisor averages all ticked positions, which is what you should EQ to.", "tips": []}, {"t": "Read the results", "x": "Frequency response: the full-room curve shows what listeners hear; peaks in the shaded modal region are room modes. Direct + early shows the speaker itself above about 250 Hz. Decay: RT60 (T30/T20) is how long sound takes to die by 60 dB; EDT is what the ear perceives. C80 and STI tell you how clear music and speech will be.", "tips": []}, {"t": "Fix, then re-measure", "x": "Work in this order: speaker placement and aiming, sub placement and delay alignment, room treatment for RT60 and reflections, and EQ last. Use the room advisor\'s EQ list as a starting point, change one thing at a time, and measure the same positions again to compare.", "tips": []}], "DWALK": [{"t": "Why crowd mics need delay", "x": "Crowd (audience) mics pick up the PA as well as the audience. That PA sound reaches them late: about 2.9 ms for every metre from the speakers. Blended with close mics in a broadcast, stream or recording mix, the late copy causes flamming and comb filtering, so the mix sounds thin and phasey. Aligning them fixes that.", "tips": ["Applause and singing are local to the mic, so they never need aligning. Only the PA bleed does.", "In-ear ambience mics on stage are usually left undelayed: low latency matters more there."]}, {"t": "Choose the time reference", "x": "The reference is \\"time zero\\": normally the console\'s band mix (a matrix or aux carrying the close mics), because that is what the crowd mics must line up with. If you can\'t send it to the interface, a mic close to the main PA works too.", "tips": ["With several crowd mics, measure each against the same reference."]}, {"t": "Place the crowd mics", "x": "Point the mics at the audience, not at the PA, and keep them out of the PA\'s main coverage where you can (high on the truss, at the side of the stage, or at FOH facing the crowd). Matched left and right pairs at the same distance keep the image steady.", "tips": ["Cardioid or shotgun mics aimed away from the PA reduce bleed, which also makes delay less critical.", "Measure the distance from the main PA hang, not from the stage."]}, {"t": "Place the reference mic", "x": "Best is no reference mic at all: feed the console band mix into input 1. It is exactly what the crowd mics must line up with, and the reading is the full delay from the PA to the crowd mic. If you have to use a mic as the reference, put it close to the PA, never near the crowd mics: about 1 m in front of the speaker the crowd mic hears most, on its axis and at the height of its high-frequency driver. The delay finder then only sees the extra path from the reference mic to the crowd mic, so set \\"Reference is\\" to \\"Mic at the PA\\" and enter that distance: the program adds the missing time back (2.9 ms per metre).", "tips": ["Same speaker, same side: measure the left crowd mic against a reference at the left hang and the right crowd mic against the right hang.", "Never put the reference next to a crowd mic: it would read about 0 ms and tell you nothing. Every crowd mic must be farther from the PA than the reference.", "Put it in front of the tops, not on a subwoofer: subs are often time-offset from the tops and smear the reading.", "Mute delay towers and front fills while measuring, or the crowd mic hears several arrivals and the spike splits.", "A mic reference misses the PA processor latency (often 1 to 3 ms) that the band mix really has, so check the result by ear or with the console bus afterwards."]}, {"t": "Estimate with the calculator", "x": "Enter the distance from the PA to each crowd mic and the air temperature. The calculator gives the delay in ms and in samples. Add each mic to the list. This is a good starting point if you cannot measure.", "tips": []}, {"t": "Wire up the delay finder", "x": "Connect a 2-channel interface: the reference (console band mix) into input 1 and the crowd mic into input 2. Set \\"Reference on\\" to match. Turn off any processing on the interface inputs. Choose a search range longer than the expected delay.", "tips": []}, {"t": "Measure the delay", "x": "Play music or pink noise through the PA at a normal level. Watch the correlation plot: one tall spike should stand out. Wait until confidence reads good and stability is within ±0.2 ms, then add the reading to the crowd mic list. A downward spike means the mic is in reverse polarity.", "tips": []}, {"t": "Apply the delay", "x": "Pick a strategy in the crowd mic list. \\"Delay the band mix\\" delays the close-mic bus by the farthest crowd mic delay and delays the nearer crowd mics to match: everything lines up. Best for broadcast and streaming, but tell the video team the audio is now later. \\"Align crowd mics\\" delays the nearer crowd mics to match the farthest: use it when you cannot delay the band, and keep crowd mics low under music.", "tips": ["Recording for later? Leave everything undelayed and slide the crowd tracks earlier in the DAW by the measured time.", "Flip polarity on any mic marked Ø."]}, {"t": "Fine-tune by ear", "x": "Solo the reference and one crowd mic at similar levels. Nudge the delay ±0.5 ms and the polarity until the low end sounds fullest and the sound stops \\"swirling\\". Then set the crowd level so it adds space without smearing the drums.", "tips": []}, {"t": "Re-check during the show", "x": "Sound slows down in cold air and speeds up in heat: at 30 m a 10 °C change moves the delay by about 1.5 ms. Re-measure after doors when the room warms up, and whenever the PA or the mics move.", "tips": []}], "S21": [{"t": "Plan the broadcast routing", "x": "The words used in this walkthrough: \\"band channels\\" are all the input channels of the band (drums, bass, guitars, keys, vocals): everything except the crowd mics. \\"L/R\\" is the main mix bus that drives the PA. \\"BAND BC\\" (band broadcast) is a stereo group you create for the broadcast only: route every band channel to it as well as to L/R (Channel Setup > Outputs > Group Assign, then tap the group and Master), so it carries the same band mix but feeds only the broadcast. Because it is separate from L/R, it can be delayed without touching the PA. \\"BCAST\\" is the stereo matrix that goes to the broadcast truck, recorder or stream. On the S21 every input channel can also send straight to a matrix and has its own delay, so send each crowd mic channel directly to BCAST and put each crowd mic\'s delay on its own channel. BAND BC also goes into BCAST, and the band delay goes on the BAND BC group output.", "tips": ["Why not delay the band channels? A channel delay sits inside the channel, before all its outputs. Every band channel feeds L/R (the PA) and the monitor auxes, so a delay on, say, the kick channel makes the kick late in the PA and in the monitors too. A delay on the BAND BC group output only affects what leaves that group: the broadcast.", "Crowd mics normally feed only the broadcast, so delaying their channels is safe. If a crowd mic also feeds the PA or the in-ears, the delay goes there too.", "No spare group? Send the band channels straight to BCAST as well and use \\"Align crowd mics\\": the crowd mics line up with each other, but the band stays early, so keep the crowd low under music.", "A delay on the BCAST matrix output moves band and crowd together, so it does not align anything. Leave it at 0 unless video needs the whole feed later.", "Already feeding L/R into BCAST? Then the crowd mic channel delays line up the crowd mics with each other, but L/R cannot be delayed because it is the PA. Either keep the crowd low under music, or give the band its own broadcast delay: a separate matrix \\"BC BAND\\" fed by L/R with output delay set to the farthest crowd mic, sent to the broadcast as its own stem next to a \\"BC CROWD\\" matrix fed by the crowd channels."]}, {"t": "Patch two measurement outputs", "x": "Reference: open the BAND BC group (tap its name to open Channel Setup), tap Outputs > Direct Outputs, choose Local I/O > Analogue and tap Out 1. Crowd mic: open Main Menu > Matrix, pick a free matrix input, tap \\"No Input\\" and choose Internal > Channel Outputs > the crowd mic channel. Send that matrix input only to one spare matrix, name it \\"MEAS\\", and patch MEAS the same way (its Channel Setup > Direct Outputs) to Out 2. Both signals then go through the console the same way, so the console\'s own latency cancels out of the measurement.", "tips": ["The MEAS send comes after the channel delay, so in the verify step it shows the delayed result.", "The crowd channel\'s direct output works too, if it is set up in your session.", "Name the outputs in the patch so the next engineer knows what they are."]}, {"t": "Where the reference comes from", "x": "On the S21 the reference should be electrical: BAND BC from local out 1, not a microphone. It is exactly the signal the broadcast mix lines up with, and the reading includes the console and PA processing latency the crowd mics really hear. Only if you cannot get a console output to the laptop, use a measurement mic as the reference: about 1 m in front of the main hang or stack on the same side as the crowd mic, on axis, at the height of the high-frequency driver, and never near the crowd mics. Set \\"Reference is\\" to \\"Mic at the PA\\" and enter its distance; the program adds that time back.", "tips": ["Same speaker, same side: measure the left crowd mic against a reference at the left hang and the right crowd mic against the right hang.", "Never put the reference next to a crowd mic: it would read about 0 ms and tell you nothing. Every crowd mic must be farther from the PA than the reference.", "Put it in front of the tops, not on a subwoofer: subs are often time-offset from the tops and smear the reading.", "Mute delay towers and front fills while measuring, or the crowd mic hears several arrivals and the spike splits.", "A mic reference misses the PA processor latency (often 1 to 3 ms) that the band mix really has, so check the result by ear or with the console bus afterwards."]}, {"t": "Connect the laptop interface", "x": "Cable local out 1 to input 1 and local out 2 to input 2 of a 2-channel USB interface. Set the interface to line level, turn off any input processing, and set the gains so both meters in the delay finder peak around −20 dBFS. Choose \\"Interface, 2 channels\\" and \\"Reference on: Input 1\\" in the delay finder below.", "tips": []}, {"t": "Zero the delays first", "x": "Before measuring, make sure nothing is already delayed. Tap each crowd mic channel\'s name to open Channel Setup: the Input Processing box shows the delay, and the right-hand side shows the Delay value with \\"Delay Off / Click to enable\\". It should read Delay Off or 0.00 ms. Do the same for the BAND BC group and the BCAST matrix (groups and matrices have the same Channel Setup), and set Input Polarity to Standard on the crowd channels.", "tips": ["Delay values on DiGiCo can be shown in ms or as a distance. Use ms so the numbers match this program."]}, {"t": "Play program through the PA", "x": "Play music or pink noise through the PA at a normal show level with the band channels feeding BAND BC. The crowd mic must hear the PA, so do this with the PA on and the room as quiet as you can get it otherwise.", "tips": []}, {"t": "Measure each crowd mic", "x": "Watch the delay finder until confidence reads good and stability is within ±0.2 ms, type the mic\'s name and press \\"Add to crowd mic list\\". Then in Main Menu > Matrix, tap the MEAS matrix input\'s source name and pick the next crowd mic channel (only one crowd mic in MEAS at a time), press Reset average, and repeat for every crowd mic.", "tips": ["A downward spike means the mic is in reverse polarity; it is marked Ø in the list.", "Can\'t measure? Add the mics from the calculator using the distance from the PA."]}, {"t": "Set the crowd channel delays", "x": "Set \\"Delay the band mix\\" in the crowd mic list. On each crowd mic channel tap its name to open Channel Setup and tap the Input Processing box. Press Delay On, drag the Input Delay slider (0 to 682 ms) near the value, then fine-tune it with the Delay encoder on the right (the mouse wheel in the offline editor) until it reads the value from the list. The nearer mics now wait for the farthest one, and because the crowd channels feed BCAST directly, the delay goes straight into the broadcast mix:", "tips": []}, {"t": "Delay the band group", "x": "Find the BAND BC group (press Space for the Console Overview; groups are red). Tap its name to open Channel Setup, tap Input Processing, press Delay On and set the arrival time of the farthest crowd mic (the largest value in the crowd mic list). Leave the BCAST matrix output undelayed.", "tips": ["Only the group gets this delay, never the band channels, so the PA and monitors stay on time.", "Using L/R into BCAST instead of a band group? Never delay L/R itself (that is the PA). Skip this step and use \\"Align crowd mics\\" in the list, or delay a separate \\"BC BAND\\" matrix fed by L/R by this amount and send it as its own stem.", "Tell the video or broadcast team the audio is now this much later, so they can keep lip sync."]}, {"t": "Verify with the delay finder", "x": "Re-measure with the delays switched on: patch BAND BC (now delayed) to input 1 and each crowd mic via the MEAS matrix to input 2 again. Every crowd mic should now read close to 0 ms (within about ±0.5 ms) with normal polarity. If one reads off, correct that channel\'s delay by the difference.", "tips": []}, {"t": "Fine-tune by ear", "x": "Solo BAND BC and one crowd mic at similar levels in your headphones. Nudge that crowd channel\'s delay in 0.1–0.5 ms steps and try the polarity button until the low end sounds fullest and the sound stops swirling. Then bring the crowd level down to where it adds space without smearing the drums.", "tips": []}, {"t": "Protect the delays in snapshots", "x": "Delays are part of each snapshot. Either open Main Menu > Session & Snapshots and press Update (✓) on every snapshot after setting them, or take delay out of the recall scope: Session & Snapshots > Global Scope, and tap the Delay block under Input Processing so snapshots stop recalling it (or use Safes in each channel\'s Channel Setup). Then save the session with File… and keep a copy on a USB stick.", "tips": ["Write the values on the console notes or a strip of tape too: quicker than digging through menus during the show."]}, {"t": "Re-check during the show", "x": "As the room fills up and warms, sound travels faster and the crowd mics arrive earlier: about 1.5 ms less at 30 m for a 10 °C rise. Re-measure after doors open, and adjust the crowd channel delays and the BAND BC delay if needed.", "tips": []}]}')
 S21SHOTS = json.loads('{"Plan the broadcast routing": [["overview", "Console Overview (Space key, or Interface > Toggle Channel Overview): groups are red, matrices green. One group becomes BAND BC, one matrix BCAST."], ["grpassign", "Band channel > Channel Setup > Outputs > Group Assign: tap the BAND BC group and keep Master on. Crowd mic channels get no group."], ["mainmenu", "Main Menu: Matrix opens the Matrix Inputs page where channels and groups are fed into matrices."], ["mtxinputs", "Matrix Inputs: each column is one matrix input. Its source (here Input 11, a crowd mic) sends to Matrix 1–8 with its own level."]], "Patch two measurement outputs": [["mtxsrc", "Matrix input source: tap \\"No Input\\", then Internal > Channel Outputs, and pick the crowd mic channel (Input 11 here). Master L/R and the groups are in the same list."], ["mtxsetup", "Matrix (or group) Channel Setup: Outputs > Direct Outputs patches it to a local output."], ["outroute", "Direct Outputs > Local I/O > Analogue: tap Out 1 for BAND BC and Out 2 for MEAS."]], "Zero the delays first": [["grpsetup", "Group Channel Setup: Input Processing shows 0.00 ms and the right side reads Delay Off."]], "Measure each crowd mic": [["mtxinputs", "Main Menu > Matrix: tap the MEAS input\'s source name to switch it to the next crowd mic."]], "Set the crowd channel delays": [["chsetup", "Crowd mic Channel Setup: Input Processing shows the delay (23.4 ms here), and the right side shows Delay and Delay On."], ["inproc", "Input Processing: Delay On, then the Input Delay slider (0–682 ms). Fine-tune with the Delay encoder."]], "Delay the band group": [["grpsetup", "BAND BC group > Channel Setup: tap Input Processing and press Delay On, then set the farthest crowd mic time."]], "Protect the delays in snapshots": [["snapshots", "Main Menu > Session & Snapshots: Update (✓) stores the delays in the current snapshot; File… saves the session."], ["scope", "Global Scope: tap the Delay block under Input Processing to stop snapshots recalling delay."]]}')   # step title -> [(image key, caption)]
@@ -365,7 +365,8 @@ class Plot(tk.Canvas):
             self.create_line(x, self.mt, x, H - self.mb, fill=LINE)
             self.create_text(x, H - self.mb + 10, text=lab(t), fill=DIM, font=('Segoe UI', 8))
         span = self.ymax - self.ymin
-        step = 10 if span > 60 else 6 if span > 30 else 3 if span > 12 else 1
+        hpx = max(20, H - self.mt - self.mb)
+        step = next((c for c in (1, 2, 3, 5, 6, 10, 20, 30, 50) if span / c * 22 <= hpx), 50)
         v = math.ceil(self.ymin / step) * step
         while v <= self.ymax:
             y = float(self.Y(v))
@@ -457,6 +458,14 @@ def make_bands(frac, fmin=20, fmax=20000):
         fc = 1000 * G ** (k / frac)
         bands.append((fc, fc * G ** (-0.5 / frac), fc * G ** (0.5 / frac)))
     return bands
+
+
+NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+
+
+def note_name(f):
+    n = int(round(12 * math.log2(f / 440.0))) + 57
+    return f'{NOTES[n % 12]}{n // 12}'
 
 
 def make_lut():
@@ -755,15 +764,28 @@ class LiveTab(ttk.Frame):
         self.frac = tk.StringVar(value='1/3')
         self.avg = tk.StringVar(value='Medium')
         self.show_fft = tk.BooleanVar(value=True)
-        self.view = tk.StringVar(value='RTA + spectrum')
-        self.show_sg = tk.BooleanVar(value=True)
+        ui = app.settings.get('ui', {})
+        self.view = tk.StringVar(value=ui.get('view', 'RTA + spectrum'))
+        self.show_sg = tk.BooleanVar(value=ui.get('sg', True))
+        self.rta_weight = tk.StringVar(value=ui.get('rta_w', 'Z (flat)'))
+        self.fb_on = tk.BooleanVar(value=ui.get('fb', True))
+        self.fb_log = {}      # key -> dict(f, ex, hits, first, last, peak_db)
+        self.fb_sel = None    # frequency highlighted from the feedback list
+        self.hover = None     # ('plot', x, y) or ('sg', x, y)
         self.show_peak = tk.BooleanVar(value=True)
         self.weight = tk.StringVar(value='A')
         self.tw = tk.StringVar(value='Fast')
         self.hold = tk.StringVar(value='15 s')
-        self.adv_on = tk.BooleanVar(value=True)
+        self.adv_on = tk.BooleanVar(value=ui.get('adv', True))
+        self.adv_full = True
         self._layout()
         self.reset()
+        if not self.adv_on.get():
+            self.adv.pack_forget()
+        if not self.show_sg.get():
+            self.sg.pack_forget()
+        if self.rta_weight.get()[0] != 'Z':
+            self.weight_changed()
 
     def _layout(self):
         left = ttk.Frame(self)
@@ -783,18 +805,29 @@ class LiveTab(ttk.Frame):
         ttk.Checkbutton(ctl, text='Spectrograph', variable=self.show_sg, command=self.toggle_sg).pack(side='left', padx=8)
         ttk.Checkbutton(ctl, text='Peak hold', variable=self.show_peak, command=lambda: self.plot.clear('peak')).pack(side='left')
         ttk.Button(ctl, text='Reset peak', command=self.reset_peak).pack(side='left', padx=6)
+        ctl2 = ttk.Frame(left, style='Panel.TFrame', padding=(6, 0, 6, 6))
+        ctl2.pack(fill='x')
+        ttk.Label(ctl2, text='RTA weighting', style='Dim.TLabel').pack(side='left', padx=(8, 2))
+        c = ttk.Combobox(ctl2, textvariable=self.rta_weight, values=['Z (flat)', 'A', 'C'], state='readonly', width=8)
+        c.pack(side='left')
+        c.bind('<<ComboboxSelected>>', lambda e: self.weight_changed())
+        ttk.Checkbutton(ctl2, text='Mix advisor', variable=self.adv_on, command=self.adv_toggled).pack(side='left', padx=(14, 6))
+        ttk.Checkbutton(ctl2, text='Feedback list', variable=self.fb_on, command=self.fb_toggled).pack(side='left', padx=6)
         self.freeze = tk.BooleanVar(value=False)
-        ttk.Checkbutton(ctl, text='Freeze', variable=self.freeze).pack(side='left', padx=6)
-        self.readout = ttk.Label(ctl, text='', style='Dim.TLabel')
-        self.readout.pack(side='right', padx=6)
-        self.plot = Plot(left, 20, 120, ylabel='dB SPL', height=380)
+        ttk.Checkbutton(ctl2, text='Freeze', variable=self.freeze).pack(side='left', padx=6)
+        self.readout = ttk.Label(ctl2, text='Hover over the graph to read a frequency', style='Dim.TLabel', width=1, anchor='e')
+        self.readout.pack(side='right', padx=6, fill='x', expand=True)
+        self.plot = Plot(left, 20, 120, ylabel='dB SPL', height=360)
         self.plot.pack(fill='both', expand=True, pady=(6, 0))
-        self.plot.bind('<Motion>', self.on_motion)
+        self.plot.bind('<Motion>', lambda e: self.set_hover('plot', e.x, e.y))
+        self.plot.bind('<Leave>', lambda e: self.set_hover(None))
         self.sg = tk.Canvas(left, bg=BG, highlightthickness=0, height=130)
         self.sg.pack(fill='x')
         self.sg_img = None
         self.sg_top = None
         self.sg.bind('<Configure>', lambda e: self.sg_reset())
+        self.sg.bind('<Motion>', lambda e: self.set_hover('sg', e.x, e.y))
+        self.sg.bind('<Leave>', lambda e: self.set_hover(None))
         self.sg_lut = make_lut()
         # advisor
         self.adv = ttk.Frame(left, style='Panel.TFrame', padding=8)
@@ -804,7 +837,8 @@ class LiveTab(ttk.Frame):
         ttk.Label(head, text='Mix advisor', style='H.TLabel').pack(side='left')
         self.adv_sum = ttk.Label(head, text='', style='Dim.TLabel')
         self.adv_sum.pack(side='left', padx=10)
-        self.adv_btn = ttk.Button(head, text='Hide', command=self.toggle_adv)
+        ttk.Button(head, text='✕', width=3, command=lambda: (self.adv_on.set(False), self.adv_toggled())).pack(side='right', padx=(4, 0))
+        self.adv_btn = ttk.Button(head, text='Summary only', command=self.toggle_adv)
         self.adv_btn.pack(side='right')
         ttk.Combobox(head, textvariable=self.hold, values=['5 s', '15 s', '30 s', '60 s'], state='readonly', width=5).pack(side='right', padx=4)
         ttk.Label(head, text='Keep tips for', style='Dim.TLabel').pack(side='right')
@@ -814,8 +848,9 @@ class LiveTab(ttk.Frame):
             self.adv_txt.tag_configure(tag, foreground=col, font=('Segoe UI', 10, 'bold'))
         self.adv_txt.tag_configure('dim', foreground=DIM)
         # SPL panel
-        right = ttk.Frame(self, style='Panel.TFrame', padding=12, width=260)
+        right = ttk.Frame(self, style='Panel.TFrame', padding=10, width=300)
         right.pack(side='right', fill='y', padx=(8, 0))
+        right.pack_propagate(False)  # fixed width: changing text must not shift the layout
         ttk.Label(right, text='SPL meter', style='H.TLabel').pack(anchor='w')
         r = ttk.Frame(right, style='Panel.TFrame')
         r.pack(fill='x', pady=4)
@@ -830,12 +865,30 @@ class LiveTab(ttk.Frame):
         self.spl_unit = ttk.Label(right, text='dB(A) Fast', style='Dim.TLabel')
         self.spl_unit.pack(anchor='w')
         self.spl_more = ttk.Label(right, text='', style='Mid.TLabel', justify='left')
-        self.spl_more.pack(anchor='w', pady=10)
+        self.spl_more.pack(anchor='w', pady=6)
         ttk.Button(right, text='Reset Leq / Max', command=self.reset_spl).pack(anchor='w')
-        self.cal_lbl = ttk.Label(right, text='', style='Dim.TLabel', wraplength=230, justify='left')
-        self.cal_lbl.pack(anchor='w', pady=(14, 0))
-        self.hist = Plot(right, 40, 120, xmin=-60, xmax=0, logx=False, ylabel='dB', height=150, xlabel='s', width=240)
-        self.hist.pack(fill='x', pady=(10, 0))
+        self.fb_box = ttk.Frame(right, style='Panel.TFrame')
+        fh = ttk.Frame(self.fb_box, style='Panel.TFrame')
+        fh.pack(fill='x')
+        ttk.Label(fh, text='Feedback frequencies', style='H.TLabel').pack(side='left')
+        ttk.Button(fh, text='Clear', command=self.fb_clear).pack(side='right')
+        self.fb_count = ttk.Label(self.fb_box, text='none yet', style='Dim.TLabel')
+        self.fb_count.pack(anchor='w')
+        self.fb_tree = ttk.Treeview(self.fb_box, columns=('f', 'geq', 'ex', 'hits', 'last'), show='headings', height=6)
+        for c, t, w in (('f', 'Freq', 72), ('geq', 'GEQ', 58), ('ex', '+dB', 42), ('hits', 'Hits', 38), ('last', 'Last', 56)):
+            self.fb_tree.heading(c, text=t)
+            self.fb_tree.column(c, width=w, minwidth=w, anchor='w', stretch=False)
+        self.fb_tree.tag_configure('live', foreground=BAD)
+        self.fb_tree.pack(fill='both', expand=True, pady=4)
+        self.fb_tree.bind('<<TreeviewSelect>>', lambda e: self.fb_select())
+        self.fb_info = ttk.Label(self.fb_box, text='', style='Dim.TLabel', wraplength=260, justify='left')
+        self.fb_info.pack(anchor='w')
+        self.cal_lbl = ttk.Label(right, text='', style='Dim.TLabel', wraplength=260, justify='left')
+        self.cal_lbl.pack(anchor='w', pady=(10, 0))
+        if self.fb_on.get():
+            self.fb_box.pack(fill='both', expand=True, pady=(10, 0), before=self.cal_lbl)
+        self.hist = Plot(right, 40, 120, xmin=-60, xmax=0, logx=False, ylabel='dB', height=110, xlabel='s', width=270)
+        self.hist.pack(fill='x', pady=(8, 0))
         self.make_bands()
 
     def make_bands(self):
@@ -889,28 +942,111 @@ class LiveTab(ttk.Frame):
         self.cal_lbl.config(text=txt, foreground=DIM if a.calibrated else WARN)
 
     def toggle_adv(self):
-        on = not self.adv_on.get()
-        self.adv_on.set(on)
-        self.adv_btn.config(text='Hide' if on else 'Show')
-        if on:
+        # collapse the advisor to its one-line summary, or expand it again
+        self.adv_full = not self.adv_full
+        self.adv_btn.config(text='Summary only' if self.adv_full else 'Show tips')
+        if self.adv_full:
             self.adv_txt.pack(fill='x', pady=(6, 0))
+            self._last_sig = None
         else:
             self.adv_txt.pack_forget()
 
-    def on_motion(self, e):
+    def adv_toggled(self):
+        if self.adv_on.get():
+            self.adv.pack(fill='x', pady=(6, 0), after=self.sg if self.show_sg.get() else self.plot)
+            self._last_sig = None
+        else:
+            self.adv.pack_forget()
+            self.plot.clear('zones')
+            if not self.fb_on.get():
+                self.plot.clear('rings')
+        self.save_ui()
+
+    def fb_toggled(self):
+        if self.fb_on.get():
+            self.fb_box.pack(fill='both', expand=True, pady=(10, 0), before=self.cal_lbl)
+        else:
+            self.fb_box.pack_forget()
+            self.fb_sel = None
+            self.plot.clear('fbsel')
+            if not self.adv_on.get():
+                self.plot.clear('rings')
+        self.save_ui()
+
+    def weight_changed(self):
+        w = self.rta_weight.get()[0]
+        self.plot.ylabel = 'dB SPL' + ('' if w == 'Z' else f' ({w})')
+        self.plot.redraw()
+        self.band_avg = self.band_peak = self.band_show = self.spec_avg = self.spec_peak = None
+        self.save_ui()
+
+    def rta_w(self, f):
+        w = self.rta_weight.get()[0]
+        if w == 'Z':
+            return None
+        key = (w, len(f), f[1])
+        if getattr(self, '_wkey', None) != key:
+            self._wkey, self._wlin = key, 10 ** (weight_db(f, w) / 10)
+        return self._wlin
+
+    def save_ui(self):
+        self.app.settings['ui'] = {'view': self.view.get(), 'sg': self.show_sg.get(), 'rta_w': self.rta_weight.get(),
+                                   'adv': self.adv_on.get(), 'fb': self.fb_on.get()}
+        save_settings(self.app.settings)
+
+    def set_hover(self, where, x=0, y=0):
+        self.hover = (where, x, y) if where else None
+        self.draw_hover()
+
+    def x_to_f(self, x):
         p = self.plot
         w = max(10, p.winfo_width() - p.ml - p.mr)
-        r = (e.x - p.ml) / w
-        if not 0 <= r <= 1:
+        r = (x - p.ml) / w
+        return 10 ** (math.log10(20) + r * 3) if 0 <= r <= 1 else None
+
+    def draw_hover(self):
+        """Crosshair and a floating frequency/level label, on the RTA and the spectrograph."""
+        p, sg = self.plot, self.sg
+        p.delete('hover')
+        sg.delete('hover')
+        if not self.hover:
             return
-        f = 10 ** (math.log10(20) + r * 3)
-        h = max(10, p.winfo_height() - p.mt - p.mb)
-        v = p.ymax - (e.y - p.mt) / h * (p.ymax - p.ymin)
-        lv = ''
-        if self.band_avg is not None:
+        where, x, y = self.hover
+        f = self.x_to_f(x)
+        if f is None:
+            return
+        H = p.winfo_height()
+        lines = [f'{ftext(f)}  ({note_name(f)})']
+        if where == 'plot':
+            h = max(10, H - p.mt - p.mb)
+            v = p.ymax - (y - p.mt) / h * (p.ymax - p.ymin)
+            p.create_line(p.ml, y, p.winfo_width() - p.mr, y, fill=DIM, dash=(2, 3), tags='hover')
+            lines.append(f'cursor {v:.1f} dB')
+        if self.band_avg is not None and getattr(self, 'band_db', None) is not None and len(self.band_db) == len(self.bfc):
             i = int(np.argmin(np.abs(np.log(self.bfc / f))))
-            lv = f'  band {ftext(self.bfc[i])}: {self.band_db[i]:.1f} dB'
-        self.readout.config(text=f'{ftext(f)}  {v:.1f} dB{lv}')
+            lines.append(f'{self.frac.get()} oct band {ftext(self.bfc[i])}: {self.band_db[i]:.1f} dB')
+        if getattr(self, '_fl', None) is not None and self.spec_avg is not None and len(self.spec_avg) == len(self._fl):
+            lines.append(f'FFT {db(np.interp(math.log10(f), np.log10(self._fl), self.spec_avg)) + self.app.cal:.1f} dB')
+        if where == 'sg' and getattr(self, 'sg_lv', None) is not None:
+            row = int(min(max(y, 0), self.sg_lv.shape[0] - 1))
+            col = int(min(max(x - self.sg_x0, 0), self.sg_lv.shape[1] - 1))
+            ago = row * getattr(self, 'sg_dt', 0.033)
+            lines.append(f'{ago:.1f} s ago: {self.sg_lv[row, col]:.1f} dB')
+            sg.create_line(0, y, sg.winfo_width(), y, fill='white', dash=(2, 3), tags='hover')
+        lines.append(f'31-band GEQ slider: {ftext(nominal(f))}')
+        xx = float(p.X(f))
+        p.create_line(xx, p.mt, xx, H - p.mb, fill='white', dash=(3, 2), tags='hover')
+        sg.create_line(xx, 0, xx, sg.winfo_height(), fill='white', dash=(3, 2), tags='hover')
+        txt = '\n'.join(lines)
+        ty = (y if where == 'plot' else H * 0.4)
+        anchor = 'nw' if xx < p.winfo_width() * 0.65 else 'ne'
+        tx = xx + 12 if anchor == 'nw' else xx - 12
+        t = p.create_text(tx, ty + 10, text=txt, anchor=anchor, fill=TXT, font=('Segoe UI', 9), tags='hover')
+        bb = p.bbox(t)
+        if bb:
+            r = p.create_rectangle(bb[0] - 6, bb[1] - 4, bb[2] + 6, bb[3] + 4, fill=PANEL2, outline=LINE, tags='hover')
+            p.tag_lower(r, t)
+        self.readout.config(text='   '.join(lines[:3]))
 
     # ------------------------------------------------------------ analysis
     def bin_edges(self, fs):
@@ -940,13 +1076,15 @@ class LiveTab(ttk.Frame):
         P[0] = 0
         corr = app.corr_at(self.f)
         Pc = P * 10 ** (corr / 10) if app.mic_corr is not None else P
+        wl = self.rta_w(self.f)
+        Pw = Pc if wl is None else Pc * wl   # what the RTA shows (Z = unweighted, the usual choice)
         self.bin_edges(fs)
-        cs = np.concatenate([[0], np.cumsum(Pc)])
+        cs = np.concatenate([[0], np.cumsum(Pw)])
         bp = cs[self.hi_i + 1] - cs[self.lo_i]
         # narrow low bands may fall between bins: interpolate the bin density instead
         narrow = self.hi_i <= self.lo_i
         if narrow.any():
-            dens = np.interp(self.bfc[narrow], self.f, Pc)
+            dens = np.interp(self.bfc[narrow], self.f, Pw)
             bp[narrow] = dens * (self.bhi[narrow] - self.blo[narrow]) / (fs / App.N)
         now = time.perf_counter()
         dt = min(0.5, now - getattr(self, '_last_t', now - 0.033))
@@ -985,7 +1123,7 @@ class LiveTab(ttk.Frame):
                 ys = np.repeat(db(self.band_peak) + cal, 2)
                 p.line('peak', xs, ys, fill=PEAK, width=1.5)
         # high-resolution spectrum: 1/48-octave buckets (mean of the FFT bins in each bucket)
-        fl, spec = self.fine_spectrum(Pc, fs)
+        fl, spec = self.fine_spectrum(Pw, fs)
         a2 = 1 - math.exp(-dt / max(tau, 0.08))
         self.spec_avg = spec if self.spec_avg is None or len(self.spec_avg) != len(spec) else self.spec_avg + (spec - self.spec_avg) * a2
         yd = db(self.spec_avg) + cal
@@ -996,6 +1134,12 @@ class LiveTab(ttk.Frame):
                 p.line('peak', fl, self.spec_peak, fill=PEAK, width=1)
         if self.show_sg.get():
             self.sg_push(fl, db(spec) + cal)
+        if self.fb_sel:
+            xx = float(p.X(self.fb_sel))
+            p.delete('fbsel')
+            p.create_line(xx, p.mt, xx, p.winfo_height() - p.mb, fill=BAD, width=2, tags='fbsel')
+        if self.hover:
+            self.draw_hover()
         if now - getattr(self, '_adv_t', 0) > 0.25:
             self._adv_t = now
             self.advise(P, fs)
@@ -1004,6 +1148,7 @@ class LiveTab(ttk.Frame):
         for k in ('bars', 'peak', 'fft'):
             self.plot.clear(k)
         self.spec_peak = None
+        self.save_ui()
 
     def fine_spectrum(self, Pc, fs):
         key = (fs, len(Pc))
@@ -1025,6 +1170,7 @@ class LiveTab(ttk.Frame):
             self.sg_reset()
         else:
             self.sg.pack_forget()
+        self.save_ui()
 
     def sg_reset(self):
         W, H = self.sg.winfo_width(), self.sg.winfo_height()
@@ -1035,6 +1181,7 @@ class LiveTab(ttk.Frame):
         w = self.sg_x1 - self.sg_x0
         self.sg_buf = np.zeros((H, w, 3), np.uint8)
         self.sg_buf[:] = self.sg_lut[0]
+        self.sg_lv = np.full((H, w), -200.0, np.float32)
         self.sg_pf = 20 * 1000 ** (np.arange(w) / max(1, w - 1))
         self.sg.delete('all')
         self.sg_img = tk.PhotoImage(width=w, height=H)
@@ -1054,6 +1201,11 @@ class LiveTab(ttk.Frame):
         b = self.sg_buf
         b[1:] = b[:-1]
         b[0] = self.sg_lut[t]
+        self.sg_lv[1:] = self.sg_lv[:-1]
+        self.sg_lv[0] = row
+        nowp = time.perf_counter()
+        self.sg_dt = 0.9 * getattr(self, 'sg_dt', 0.033) + 0.1 * min(0.5, nowp - getattr(self, '_sg_t', nowp - 0.033))
+        self._sg_t = nowp
         H, w = b.shape[:2]
         self.sg_img.configure(data=b'P6 %d %d 255\n' % (w, H) + b.tobytes(), format='PPM')
 
@@ -1120,7 +1272,61 @@ class LiveTab(ttk.Frame):
             self.hist.line('h', [t - now for t, _ in self.spl_hist], [v for _, v in self.spl_hist], fill=TRACE, width=1.5)
 
     # ------------------------------------------------------------ advisor
+    # ------------------------------------------------------------ feedback list
+    def fb_update(self, now, rf):
+        for (f, lvl) in rf:
+            r = next((r for r in self.rings.values() if abs(r['f'] - f) < 1e-6), None)
+            key = round(math.log2(f) * 24)  # quarter-semitone bins: one row per frequency
+            e = self.fb_log.get(key)
+            if e is None:
+                e = self.fb_log[key] = {'f': f, 'ex': 0, 'hits': 0, 'first': now, 'last': 0, 'db': lvl}
+                e['new'] = True
+            if now - e['last'] > 1.0:
+                e['hits'] += 1
+            e.update(f=f, last=now, db=max(e['db'], lvl), ex=max(e['ex'], r['ex'] if r else 0))
+        if not self.fb_on.get():
+            return
+        sig = tuple((k, e['hits'], round(e['ex']), int(now - e['last']) // 5) for k, e in self.fb_log.items())
+        if sig == getattr(self, '_fb_sig', None):
+            return
+        self._fb_sig = sig
+        sel = self.fb_tree.selection()
+        self.fb_tree.delete(*self.fb_tree.get_children())
+        for k, e in sorted(self.fb_log.items(), key=lambda kv: -kv[1]['last']):
+            ago = now - e['last']
+            live = ago < 2
+            self.fb_tree.insert('', 'end', iid=str(k), tags=('live',) if live else (),
+                                values=(f"{e['f']:.0f} Hz", ftext(nominal(e['f'])), f"+{e['ex']:.0f}",
+                                        e['hits'], 'now' if live else f'{ago / 60:.0f} min' if ago >= 60 else f'{ago:.0f} s'))
+        keep = [i for i in sel if self.fb_tree.exists(i)]
+        if keep:
+            self.fb_tree.selection_set(keep)
+        self.fb_count.config(text=f'{len(self.fb_log)} found' if self.fb_log else 'none yet')
+
+    def fb_select(self):
+        sel = self.fb_tree.selection()
+        if not sel:
+            return
+        e = self.fb_log.get(int(sel[0]))
+        if e:
+            self.fb_sel = e['f']
+            self.fb_info.config(text=f"{e['f']:.0f} Hz ({note_name(e['f'])}): notch narrow, Q 8–15, −3 to −6 dB on the wedge or "
+                                     f"channel that rings; on a 31-band GEQ pull the {ftext(nominal(e['f']))} slider.")
+
+    def fb_clear(self):
+        self.fb_log = {}
+        self.fb_sel = None
+        self._fb_sig = None
+        self.plot.clear('fbsel')
+        self.fb_tree.delete(*self.fb_tree.get_children())
+        self.fb_count.config(text='none yet')
+        self.fb_info.config(text='')
+
     def advise(self, P, fs):
+        if (not self.adv_on.get() and not self.fb_on.get()) or getattr(self.app, 'cal_open', False):
+            self.plot.clear('rings')
+            self.plot.clear('zones')
+            return
         now = time.time()
         found = []  # (key, sev, title, tag, text, tips)
         cal = self.app.cal
@@ -1175,10 +1381,14 @@ class LiveTab(ttk.Frame):
                                    f'Notch it narrow (Q 8–15, −3 to −6 dB) at {r["f"]:.0f} Hz on that wedge or channel.',
                                    'Reduce gain before EQ: closer mic placement beats notches.']))
             rf = [(r['f'], float(Pd[int(round(r['f'] * App.N / fs))]) + cal) for r in self.rings.values() if r['n'] >= 3]
+            self.fb_update(now, rf)
             if rf:
                 self.plot.marks('rings', [a for a, _ in rf], [b + 3 for _, b in rf], [ftext(a) for a, _ in rf])
             else:
                 self.plot.clear('rings')
+        if not self.adv_on.get():
+            self.plot.clear('zones')
+            return
         # --- level checks
         if now - self.app.eng.clip < 2:
             found.append(('clip', 'bad', 'Input clipping', '0 dBFS', 'The analyzer input is clipping, so readings are wrong.',
@@ -1282,7 +1492,9 @@ class CalDialog(tk.Toplevel):
         self.app = app
         self.title('Calibrate mic')
         self.configure(bg=PANEL)
-        self.geometry('560x500')
+        self.geometry('600x560')
+        self.out_stream = None
+        app.cal_open = True  # a calibrator tone is not feedback: pause the feedback detector meanwhile
         self.transient(app)
         nb = ttk.Notebook(self)
         nb.pack(fill='both', expand=True, padx=8, pady=8)
@@ -1304,11 +1516,11 @@ class CalDialog(tk.Toplevel):
         for v in ('1000', '250'):
             ttk.Radiobutton(r, text=f'{v} Hz', value=v, variable=self.cfreq).pack(side='left', padx=4)
         ttk.Button(f1, text='Measure (3 s)', style='Accent.TButton', command=self.measure_cal).pack(anchor='w')
-        self.vt = tk.BooleanVar(value=False)
-        ttk.Checkbutton(f1, text='No calibrator? Play a virtual calibrator tone inside the program (tests the procedure only)',
-                        variable=self.vt, command=self.virtual_tone).pack(anchor='w', pady=10)
+        ttk.Label(f1, text='No calibrator? Use the Virtual calibrator tab.', style='Dim.TLabel').pack(anchor='w', pady=10)
         self.msg1 = ttk.Label(f1, text='', style='Panel.TLabel', wraplength=500, justify='left')
         self.msg1.pack(anchor='w', pady=6)
+
+        self._build_virtual(nb)
 
         # --- match a meter
         f2 = ttk.Frame(nb, style='Panel.TFrame', padding=12)
@@ -1352,18 +1564,146 @@ class CalDialog(tk.Toplevel):
         self.protocol('WM_DELETE_WINDOW', self.close)
 
     def close(self):
-        self.app.eng.tone = None
+        self.stop_virtual()
+        self.app.cal_open = False
         self.destroy()
 
-    def virtual_tone(self):
-        if self.vt.get():
-            # amplitude chosen so the tone reads the selected level with the default 120 dB offset (a stand-in mic)
-            target = float(self.lvl.get())
-            amp = math.sqrt(2) * 10 ** ((target - 120) / 20)
-            self.app.eng.tone = (float(self.cfreq.get()), amp)
-            self.msg1.config(text='Virtual calibrator on: a tone is mixed into the analyzer input. Press Measure to rehearse the steps.')
+    # ------------------------------------------------------------ virtual calibrator
+    def _build_virtual(self, nb):
+        f = ttk.Frame(nb, style='Panel.TFrame', padding=12)
+        nb.add(f, text='Virtual calibrator')
+        ttk.Label(f, text='A calibrator built into the program: it makes the same steady tone as a real acoustic '
+                          'calibrator (94, 104 or 114 dB at 1 kHz or 250 Hz).', style='Panel.TLabel', wraplength=550,
+                  justify='left').pack(anchor='w')
+        r = ttk.Frame(f, style='Panel.TFrame')
+        r.pack(anchor='w', pady=8)
+        self.vlvl = tk.StringVar(value='94')
+        self.vfreq = tk.StringVar(value='1000')
+        for v in ('94', '104', '114'):
+            ttk.Radiobutton(r, text=f'{v} dB', value=v, variable=self.vlvl, command=self.restart_virtual).pack(side='left', padx=4)
+        ttk.Label(r, text='   at', style='Panel.TLabel').pack(side='left')
+        for v in ('1000', '250'):
+            ttk.Radiobutton(r, text=f'{v} Hz', value=v, variable=self.vfreq, command=self.restart_virtual).pack(side='left', padx=4)
+        self.vmode = tk.StringVar(value='inside')
+        ttk.Radiobutton(f, text='Inside the program: the tone goes straight into the analyzer (no hardware; practise and check the meters)',
+                        value='inside', variable=self.vmode, command=self.restart_virtual).pack(anchor='w')
+        ttk.Radiobutton(f, text='Through a speaker: play it from an output, then set the amp so a trusted SPL meter at the mic reads the level',
+                        value='speaker', variable=self.vmode, command=self.restart_virtual).pack(anchor='w', pady=(2, 0))
+        r2 = ttk.Frame(f, style='Panel.TFrame')
+        r2.pack(anchor='w', pady=6, padx=(22, 0))
+        ttk.Label(r2, text='Output', style='Dim.TLabel').pack(side='left')
+        self.vout = tk.StringVar()
+        outs, self.vouts = [], []
+        if sd is not None:
+            try:
+                for i, d in enumerate(sd.query_devices()):
+                    if d['max_output_channels'] > 0:
+                        self.vouts.append(i)
+                        outs.append(d['name'])
+            except Exception:
+                pass
+        self.vout_cb = ttk.Combobox(r2, textvariable=self.vout, values=outs or ['(no audio output available)'], state='readonly', width=34)
+        self.vout_cb.pack(side='left', padx=4)
+        self.vout.set((outs or ['(no audio output available)'])[0])
+        ttk.Label(r2, text='level', style='Dim.TLabel').pack(side='left', padx=(6, 2))
+        self.vdbfs = tk.StringVar(value='-20')
+        ttk.Combobox(r2, textvariable=self.vdbfs, values=['-40', '-30', '-20', '-12', '-6'], state='readonly', width=4).pack(side='left')
+        ttk.Label(r2, text='dBFS', style='Dim.TLabel').pack(side='left', padx=2)
+        b = ttk.Frame(f, style='Panel.TFrame')
+        b.pack(anchor='w', pady=8)
+        self.vbtn = ttk.Button(b, text='Start tone', style='Accent.TButton', command=self.toggle_virtual)
+        self.vbtn.pack(side='left')
+        ttk.Button(b, text='Calibrate to this tone (3 s)', command=self.cal_virtual).pack(side='left', padx=8)
+        self.vread = ttk.Label(f, text='--.- dB', style='Big.TLabel')
+        self.vread.pack(anchor='w')
+        self.vread2 = ttk.Label(f, text='The analyzer reading at the tone frequency shows here while the tone plays.',
+                                style='Dim.TLabel', wraplength=550, justify='left')
+        self.vread2.pack(anchor='w')
+        self.vmsg = ttk.Label(f, text='', style='Panel.TLabel', wraplength=550, justify='left')
+        self.vmsg.pack(anchor='w', pady=6)
+        self.after(250, self.virtual_meter)
+
+    def toggle_virtual(self):
+        if self.app.eng.tone is not None or self.out_stream is not None:
+            self.stop_virtual()
         else:
-            self.app.eng.tone = None
+            self.start_virtual()
+
+    def restart_virtual(self):
+        if self.app.eng.tone is not None or self.out_stream is not None:
+            self.stop_virtual()
+            self.start_virtual()
+
+    def start_virtual(self):
+        f0 = float(self.vfreq.get())
+        if self.vmode.get() == 'inside':
+            # a stand-in mic with the default sensitivity: the tone reads exactly the chosen level at the 120 dB offset
+            amp = math.sqrt(2) * 10 ** ((float(self.vlvl.get()) - 120) / 20)
+            self.app.eng.tone = (f0, amp)
+            self.vmsg.config(text='Tone on inside the program. With the default offset the meter reads the chosen level; '
+                                  '"Calibrate to this tone" rehearses the real procedure.', foreground=TXT)
+        else:
+            if sd is None or not self.vouts:
+                self.vmsg.config(text='No audio output available: ' + (SD_ERR or 'none found'), foreground=BAD)
+                return
+            dev = self.vouts[max(0, self.vout_cb.current())]
+            amp = math.sqrt(2) * 10 ** (float(self.vdbfs.get()) / 20)
+            fs = 48000
+            ph = [0.0]
+
+            def cb(out, frames, t, status):
+                k = ph[0] + 2 * np.pi * f0 * np.arange(frames) / fs
+                out[:] = (amp * np.sin(k)).astype(np.float32).reshape(-1, 1).repeat(out.shape[1], 1)
+                ph[0] = float((k[-1] + 2 * np.pi * f0 / fs) % (2 * np.pi))
+            try:
+                self.out_stream = sd.OutputStream(device=dev, channels=1, samplerate=fs, dtype='float32', callback=cb)
+                self.out_stream.start()
+            except Exception as e:
+                self.out_stream = None
+                self.vmsg.config(text=f'Could not open the output: {e}', foreground=BAD)
+                return
+            self.vmsg.config(text=f'Playing {f0:.0f} Hz. Start low, raise the amp until the SPL meter next to the mic reads '
+                                  f'{self.vlvl.get()} dB, then press "Calibrate to this tone".', foreground=TXT)
+        self.vbtn.config(text='Stop tone')
+
+    def stop_virtual(self):
+        self.app.eng.tone = None
+        if self.out_stream is not None:
+            try:
+                self.out_stream.stop()
+                self.out_stream.close()
+            except Exception:
+                pass
+            self.out_stream = None
+        if hasattr(self, 'vbtn'):
+            self.vbtn.config(text='Start tone')
+
+    def virtual_meter(self):
+        if not self.winfo_exists():
+            return
+        try:
+            if self.app.eng.tone is not None or self.out_stream is not None:
+                self.app.eng.pump()
+                fs = self.app.eng.fs
+                x = self.app.eng.latest(fs // 2)[0]
+                f0 = float(self.vfreq.get())
+                w = np.hanning(len(x))
+                P = np.abs(np.fft.rfft(x * w)) ** 2 * 2 / (len(x) * np.sum(w ** 2))
+                f = np.fft.rfftfreq(len(x), 1 / fs)
+                m = (f > f0 / 2 ** (1 / 6)) & (f < f0 * 2 ** (1 / 6))
+                lv = 10 * math.log10(max(float(np.sum(P[m])), 1e-20)) + self.app.cal + float(self.app.corr_at(np.array([f0]))[0])
+                self.vread.config(text=f'{lv:.1f} dB')
+                self.vread2.config(text=f'Analyzer reading at {f0:.0f} Hz with the current offset ({self.app.cal:.1f} dB). '
+                                        f'Target {self.vlvl.get()} dB.')
+        except Exception:
+            pass
+        self.after(250, self.virtual_meter)
+
+    def cal_virtual(self):
+        if self.app.eng.tone is None and self.out_stream is None:
+            self.vmsg.config(text='Start the tone first.', foreground=WARN)
+            return
+        self.measure_cal(msg=self.vmsg, f0=float(self.vfreq.get()), target=float(self.vlvl.get()))
 
     def avg_level(self, seconds, cb):
         """Collect the band level near the calibrator frequency (or broadband) for a few seconds."""
@@ -1381,9 +1721,11 @@ class CalDialog(tk.Toplevel):
             cb(x)
         poll()
 
-    def measure_cal(self):
-        f0 = float(self.cfreq.get())
-        self.msg1.config(text='Measuring… keep the calibrator steady.')
+    def measure_cal(self, msg=None, f0=None, target=None):
+        msg = msg or self.msg1
+        f0 = f0 or float(self.cfreq.get())
+        target = target or float(self.lvl.get())
+        msg.config(text='Measuring… keep the calibrator steady.', foreground=TXT)
 
         def done(x):
             fs = self.app.eng.fs
@@ -1394,17 +1736,16 @@ class CalDialog(tk.Toplevel):
             ms_band = float(np.sum(P[m]))
             ms_all = float(np.mean(x ** 2))
             if ms_band < 1e-12:
-                self.msg1.config(text='No signal. Check the mic, interface gain and the input device.', foreground=BAD)
+                msg.config(text='No signal. Check the mic, interface gain and the input device.', foreground=BAD)
                 return
             if ms_band < 0.5 * ms_all:
-                self.msg1.config(text=f'Warning: less than half the energy is at {f0:.0f} Hz. Too much background noise or the wrong frequency?', foreground=WARN)
+                msg.config(text=f'Warning: less than half the energy is at {f0:.0f} Hz. Too much background noise or the wrong frequency?', foreground=WARN)
             corr = float(self.app.corr_at(np.array([f0]))[0])
             lvl_dbfs = 10 * math.log10(ms_band) + corr
-            target = float(self.lvl.get())
             self.app.cal = target - lvl_dbfs
             self.app.calibrated = True
             self.app.store_cal()
-            self.msg1.config(text=f'Done. The calibrator read {lvl_dbfs:.1f} dBFS, so the offset is now {self.app.cal:.1f} dB. Saved.', foreground=GOOD)
+            msg.config(text=f'Done. The calibrator read {lvl_dbfs:.1f} dBFS, so the offset is now {self.app.cal:.1f} dB. Saved.', foreground=GOOD)
         self.avg_level(3, done)
 
     def match_meter(self):

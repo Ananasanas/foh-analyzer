@@ -1,13 +1,16 @@
-FOH Analyzer - Python desktop version 1.1
+FOH Analyzer - Python desktop version 1.2
 =========================================
 
 What it does
 - Live tab: RTA (1/1 to 1/24 octave) and high-resolution FFT spectrum (View: RTA + spectrum,
   RTA bars or Spectrum), scrolling spectrograph, averaging, peak hold and freeze, about 30 fps;
+  RTA weighting Z (flat, the standard for an RTA) or A/C; hover the RTA or spectrograph to read
+  frequency, note, band level and GEQ slider; feedback frequency list on the side (on/off);
   SPL meter A/C/Z with Fast/Slow/Impulse, Leq, Max and Peak; 60 s SPL history;
   Mix advisor (feedback/ringing, mud, boom, harsh, sibilance, dull top, clipping, low dynamics).
-  Tips stay on screen 5/15/30/60 s after the problem clears; the advisor can be hidden.
-- Calibrate mic...: acoustic calibrator (94/104/114 dB at 1 kHz or 250 Hz), match a trusted
+  Tips stay on screen 5/15/30/60 s after the problem clears; the advisor can be switched off.
+- Calibrate mic...: acoustic calibrator (94/104/114 dB at 1 kHz or 250 Hz), a built-in virtual
+  calibrator (inside the program or through a speaker), match a trusted
   SPL meter, manual offset, or load your measurement mic's calibration file (UMIK-1 etc.).
   Saved per input device in your home folder (.foh_analyzer.json).
 - Room tab: sweep measurement (speaker + mic) or a simulated room. Frequency response, decay
