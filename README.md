@@ -4,6 +4,7 @@ A single-file browser app for live sound engineers: real-time analyzer (RTA/FFT 
 
 ## Use it
 
+- **Windows, easiest:** download [FOH-Analyzer-Windows.zip](FOH-Analyzer-Windows.zip?raw=1), right-click > Extract All, then double-click `Start FOH Analyzer.bat`.
 - **Live with a microphone:** download `FOH-Analyzer.html` and open it in Chrome, Edge or Firefox. Allow microphone access when asked.
 - **In the browser:** if GitHub Pages is turned on for this repository (Settings > Pages > Deploy from branch `main`, folder `/`), the app opens at `https://<your-user>.github.io/<repo>/`. Pages are served over HTTPS, so the microphone works there too.
 
