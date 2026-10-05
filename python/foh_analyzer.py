@@ -12,6 +12,7 @@ import json
 import math
 import os
 import queue
+import re
 import sys
 import threading
 import time
@@ -29,7 +30,7 @@ except Exception as e:  # missing module or missing PortAudio
     SD_ERR = str(e) or e.__class__.__name__
 
 APP = 'FOH Analyzer'
-VERSION = '1.2'
+VERSION = '1.3'
 SETTINGS = os.path.join(os.path.expanduser('~'), '.foh_analyzer.json')
 TUT = json.loads('{"WALK": [{"t": "Set up the measurement mic", "x": "Use an omnidirectional measurement mic on a stand at ear height (about 1.2 m seated, 1.7 m standing), pointing up or toward the speakers. Keep it at least 1 m from walls and off tables and consoles. In your computer\'s sound settings turn off any mic enhancements, and set the interface gain so speech near the mic peaks around −30 dBFS.", "tips": []}, {"t": "Calibrate the level", "x": "Fit a 94 dB calibrator over the capsule and use the calibrator tab, or match a trusted SPL meter. RT60 and the response shape do not need calibration, but noise rating and level checks do. Skip this if you only care about the room\'s sound.", "tips": []}, {"t": "Load the mic file", "x": "If your mic came with a calibration file (UMIK, Dayton and similar), load it so the high frequencies are measured correctly. Optional for most room work.", "tips": []}, {"t": "Describe the room", "x": "Enter length, width and height in metres and choose what the room is used for. This sets the RT60 target, the Schroeder frequency and the predicted room modes.", "tips": []}, {"t": "Measure background noise", "x": "With the system muted and the room as it will be during use (air conditioning on, no music), measure 5 seconds of background noise. You get an NR rating per octave.", "tips": []}, {"t": "Set the sweep level", "x": "Turn the amplifier or mixer output down first. Run one sweep at −30 dBFS, then raise the level until the decay range reads 45 dB or more without clipping. The sweep is a rising tone from 20 Hz to 20 kHz. Warn people in the room, and protect tweeters: never start loud.", "tips": []}, {"t": "Measure several positions", "x": "Measure 3 to 6 listening positions: FOH, centre, left, right, rear, balcony. Avoid the exact centre line and spots right against walls. Name each one before you press Measure. The advisor averages all ticked positions, which is what you should EQ to.", "tips": []}, {"t": "Read the results", "x": "Frequency response: the full-room curve shows what listeners hear; peaks in the shaded modal region are room modes. Direct + early shows the speaker itself above about 250 Hz. Decay: RT60 (T30/T20) is how long sound takes to die by 60 dB; EDT is what the ear perceives. C80 and STI tell you how clear music and speech will be.", "tips": []}, {"t": "Fix, then re-measure", "x": "Work in this order: speaker placement and aiming, sub placement and delay alignment, room treatment for RT60 and reflections, and EQ last. Use the room advisor\'s EQ list as a starting point, change one thing at a time, and measure the same positions again to compare.", "tips": []}], "DWALK": [{"t": "Why crowd mics need delay", "x": "Crowd (audience) mics pick up the PA as well as the audience. That PA sound reaches them late: about 2.9 ms for every metre from the speakers. Blended with close mics in a broadcast, stream or recording mix, the late copy causes flamming and comb filtering, so the mix sounds thin and phasey. Aligning them fixes that.", "tips": ["Applause and singing are local to the mic, so they never need aligning. Only the PA bleed does.", "In-ear ambience mics on stage are usually left undelayed: low latency matters more there."]}, {"t": "Choose the time reference", "x": "The reference is \\"time zero\\": normally the console\'s band mix (a matrix or aux carrying the close mics), because that is what the crowd mics must line up with. If you can\'t send it to the interface, a mic close to the main PA works too.", "tips": ["With several crowd mics, measure each against the same reference."]}, {"t": "Place the crowd mics", "x": "Point the mics at the audience, not at the PA, and keep them out of the PA\'s main coverage where you can (high on the truss, at the side of the stage, or at FOH facing the crowd). Matched left and right pairs at the same distance keep the image steady.", "tips": ["Cardioid or shotgun mics aimed away from the PA reduce bleed, which also makes delay less critical.", "Measure the distance from the main PA hang, not from the stage."]}, {"t": "Place the reference mic", "x": "Best is no reference mic at all: feed the console band mix into input 1. It is exactly what the crowd mics must line up with, and the reading is the full delay from the PA to the crowd mic. If you have to use a mic as the reference, put it close to the PA, never near the crowd mics: about 1 m in front of the speaker the crowd mic hears most, on its axis and at the height of its high-frequency driver. The delay finder then only sees the extra path from the reference mic to the crowd mic, so set \\"Reference is\\" to \\"Mic at the PA\\" and enter that distance: the program adds the missing time back (2.9 ms per metre).", "tips": ["Same speaker, same side: measure the left crowd mic against a reference at the left hang and the right crowd mic against the right hang.", "Never put the reference next to a crowd mic: it would read about 0 ms and tell you nothing. Every crowd mic must be farther from the PA than the reference.", "Put it in front of the tops, not on a subwoofer: subs are often time-offset from the tops and smear the reading.", "Mute delay towers and front fills while measuring, or the crowd mic hears several arrivals and the spike splits.", "A mic reference misses the PA processor latency (often 1 to 3 ms) that the band mix really has, so check the result by ear or with the console bus afterwards."]}, {"t": "Estimate with the calculator", "x": "Enter the distance from the PA to each crowd mic and the air temperature. The calculator gives the delay in ms and in samples. Add each mic to the list. This is a good starting point if you cannot measure.", "tips": []}, {"t": "Wire up the delay finder", "x": "Connect a 2-channel interface: the reference (console band mix) into input 1 and the crowd mic into input 2. Set \\"Reference on\\" to match. Turn off any processing on the interface inputs. Choose a search range longer than the expected delay.", "tips": []}, {"t": "Measure the delay", "x": "Play music or pink noise through the PA at a normal level. Watch the correlation plot: one tall spike should stand out. Wait until confidence reads good and stability is within ±0.2 ms, then add the reading to the crowd mic list. A downward spike means the mic is in reverse polarity.", "tips": []}, {"t": "Apply the delay", "x": "Pick a strategy in the crowd mic list. \\"Delay the band mix\\" delays the close-mic bus by the farthest crowd mic delay and delays the nearer crowd mics to match: everything lines up. Best for broadcast and streaming, but tell the video team the audio is now later. \\"Align crowd mics\\" delays the nearer crowd mics to match the farthest: use it when you cannot delay the band, and keep crowd mics low under music.", "tips": ["Recording for later? Leave everything undelayed and slide the crowd tracks earlier in the DAW by the measured time.", "Flip polarity on any mic marked Ø."]}, {"t": "Fine-tune by ear", "x": "Solo the reference and one crowd mic at similar levels. Nudge the delay ±0.5 ms and the polarity until the low end sounds fullest and the sound stops \\"swirling\\". Then set the crowd level so it adds space without smearing the drums.", "tips": []}, {"t": "Re-check during the show", "x": "Sound slows down in cold air and speeds up in heat: at 30 m a 10 °C change moves the delay by about 1.5 ms. Re-measure after doors when the room warms up, and whenever the PA or the mics move.", "tips": []}], "S21": [{"t": "Plan the broadcast routing", "x": "The words used in this walkthrough: \\"band channels\\" are all the input channels of the band (drums, bass, guitars, keys, vocals): everything except the crowd mics. \\"L/R\\" is the main mix bus that drives the PA. \\"BAND BC\\" (band broadcast) is a stereo group you create for the broadcast only: route every band channel to it as well as to L/R (Channel Setup > Outputs > Group Assign, then tap the group and Master), so it carries the same band mix but feeds only the broadcast. Because it is separate from L/R, it can be delayed without touching the PA. \\"BCAST\\" is the stereo matrix that goes to the broadcast truck, recorder or stream. On the S21 every input channel can also send straight to a matrix and has its own delay, so send each crowd mic channel directly to BCAST and put each crowd mic\'s delay on its own channel. BAND BC also goes into BCAST, and the band delay goes on the BAND BC group output.", "tips": ["Why not delay the band channels? A channel delay sits inside the channel, before all its outputs. Every band channel feeds L/R (the PA) and the monitor auxes, so a delay on, say, the kick channel makes the kick late in the PA and in the monitors too. A delay on the BAND BC group output only affects what leaves that group: the broadcast.", "Crowd mics normally feed only the broadcast, so delaying their channels is safe. If a crowd mic also feeds the PA or the in-ears, the delay goes there too.", "No spare group? Send the band channels straight to BCAST as well and use \\"Align crowd mics\\": the crowd mics line up with each other, but the band stays early, so keep the crowd low under music.", "A delay on the BCAST matrix output moves band and crowd together, so it does not align anything. Leave it at 0 unless video needs the whole feed later.", "Already feeding L/R into BCAST? Then the crowd mic channel delays line up the crowd mics with each other, but L/R cannot be delayed because it is the PA. Either keep the crowd low under music, or give the band its own broadcast delay: a separate matrix \\"BC BAND\\" fed by L/R with output delay set to the farthest crowd mic, sent to the broadcast as its own stem next to a \\"BC CROWD\\" matrix fed by the crowd channels."]}, {"t": "Patch two measurement outputs", "x": "Reference: open the BAND BC group (tap its name to open Channel Setup), tap Outputs > Direct Outputs, choose Local I/O > Analogue and tap Out 1. Crowd mic: open Main Menu > Matrix, pick a free matrix input, tap \\"No Input\\" and choose Internal > Channel Outputs > the crowd mic channel. Send that matrix input only to one spare matrix, name it \\"MEAS\\", and patch MEAS the same way (its Channel Setup > Direct Outputs) to Out 2. Both signals then go through the console the same way, so the console\'s own latency cancels out of the measurement.", "tips": ["The MEAS send comes after the channel delay, so in the verify step it shows the delayed result.", "The crowd channel\'s direct output works too, if it is set up in your session.", "Name the outputs in the patch so the next engineer knows what they are."]}, {"t": "Where the reference comes from", "x": "On the S21 the reference should be electrical: BAND BC from local out 1, not a microphone. It is exactly the signal the broadcast mix lines up with, and the reading includes the console and PA processing latency the crowd mics really hear. Only if you cannot get a console output to the laptop, use a measurement mic as the reference: about 1 m in front of the main hang or stack on the same side as the crowd mic, on axis, at the height of the high-frequency driver, and never near the crowd mics. Set \\"Reference is\\" to \\"Mic at the PA\\" and enter its distance; the program adds that time back.", "tips": ["Same speaker, same side: measure the left crowd mic against a reference at the left hang and the right crowd mic against the right hang.", "Never put the reference next to a crowd mic: it would read about 0 ms and tell you nothing. Every crowd mic must be farther from the PA than the reference.", "Put it in front of the tops, not on a subwoofer: subs are often time-offset from the tops and smear the reading.", "Mute delay towers and front fills while measuring, or the crowd mic hears several arrivals and the spike splits.", "A mic reference misses the PA processor latency (often 1 to 3 ms) that the band mix really has, so check the result by ear or with the console bus afterwards."]}, {"t": "Connect the laptop interface", "x": "Cable local out 1 to input 1 and local out 2 to input 2 of a 2-channel USB interface. Set the interface to line level, turn off any input processing, and set the gains so both meters in the delay finder peak around −20 dBFS. Choose \\"Interface, 2 channels\\" and \\"Reference on: Input 1\\" in the delay finder below.", "tips": []}, {"t": "Zero the delays first", "x": "Before measuring, make sure nothing is already delayed. Tap each crowd mic channel\'s name to open Channel Setup: the Input Processing box shows the delay, and the right-hand side shows the Delay value with \\"Delay Off / Click to enable\\". It should read Delay Off or 0.00 ms. Do the same for the BAND BC group and the BCAST matrix (groups and matrices have the same Channel Setup), and set Input Polarity to Standard on the crowd channels.", "tips": ["Delay values on DiGiCo can be shown in ms or as a distance. Use ms so the numbers match this program."]}, {"t": "Play program through the PA", "x": "Play music or pink noise through the PA at a normal show level with the band channels feeding BAND BC. The crowd mic must hear the PA, so do this with the PA on and the room as quiet as you can get it otherwise.", "tips": []}, {"t": "Measure each crowd mic", "x": "Watch the delay finder until confidence reads good and stability is within ±0.2 ms, type the mic\'s name and press \\"Add to crowd mic list\\". Then in Main Menu > Matrix, tap the MEAS matrix input\'s source name and pick the next crowd mic channel (only one crowd mic in MEAS at a time), press Reset average, and repeat for every crowd mic.", "tips": ["A downward spike means the mic is in reverse polarity; it is marked Ø in the list.", "Can\'t measure? Add the mics from the calculator using the distance from the PA."]}, {"t": "Set the crowd channel delays", "x": "Set \\"Delay the band mix\\" in the crowd mic list. On each crowd mic channel tap its name to open Channel Setup and tap the Input Processing box. Press Delay On, drag the Input Delay slider (0 to 682 ms) near the value, then fine-tune it with the Delay encoder on the right (the mouse wheel in the offline editor) until it reads the value from the list. The nearer mics now wait for the farthest one, and because the crowd channels feed BCAST directly, the delay goes straight into the broadcast mix:", "tips": []}, {"t": "Delay the band group", "x": "Find the BAND BC group (press Space for the Console Overview; groups are red). Tap its name to open Channel Setup, tap Input Processing, press Delay On and set the arrival time of the farthest crowd mic (the largest value in the crowd mic list). Leave the BCAST matrix output undelayed.", "tips": ["Only the group gets this delay, never the band channels, so the PA and monitors stay on time.", "Using L/R into BCAST instead of a band group? Never delay L/R itself (that is the PA). Skip this step and use \\"Align crowd mics\\" in the list, or delay a separate \\"BC BAND\\" matrix fed by L/R by this amount and send it as its own stem.", "Tell the video or broadcast team the audio is now this much later, so they can keep lip sync."]}, {"t": "Verify with the delay finder", "x": "Re-measure with the delays switched on: patch BAND BC (now delayed) to input 1 and each crowd mic via the MEAS matrix to input 2 again. Every crowd mic should now read close to 0 ms (within about ±0.5 ms) with normal polarity. If one reads off, correct that channel\'s delay by the difference.", "tips": []}, {"t": "Fine-tune by ear", "x": "Solo BAND BC and one crowd mic at similar levels in your headphones. Nudge that crowd channel\'s delay in 0.1–0.5 ms steps and try the polarity button until the low end sounds fullest and the sound stops swirling. Then bring the crowd level down to where it adds space without smearing the drums.", "tips": []}, {"t": "Protect the delays in snapshots", "x": "Delays are part of each snapshot. Either open Main Menu > Session & Snapshots and press Update (✓) on every snapshot after setting them, or take delay out of the recall scope: Session & Snapshots > Global Scope, and tap the Delay block under Input Processing so snapshots stop recalling it (or use Safes in each channel\'s Channel Setup). Then save the session with File… and keep a copy on a USB stick.", "tips": ["Write the values on the console notes or a strip of tape too: quicker than digging through menus during the show."]}, {"t": "Re-check during the show", "x": "As the room fills up and warms, sound travels faster and the crowd mics arrive earlier: about 1.5 ms less at 30 m for a 10 °C rise. Re-measure after doors open, and adjust the crowd channel delays and the BAND BC delay if needed.", "tips": []}]}')
 S21SHOTS = json.loads('{"Plan the broadcast routing": [["overview", "Console Overview (Space key, or Interface > Toggle Channel Overview): groups are red, matrices green. One group becomes BAND BC, one matrix BCAST."], ["grpassign", "Band channel > Channel Setup > Outputs > Group Assign: tap the BAND BC group and keep Master on. Crowd mic channels get no group."], ["mainmenu", "Main Menu: Matrix opens the Matrix Inputs page where channels and groups are fed into matrices."], ["mtxinputs", "Matrix Inputs: each column is one matrix input. Its source (here Input 11, a crowd mic) sends to Matrix 1–8 with its own level."]], "Patch two measurement outputs": [["mtxsrc", "Matrix input source: tap \\"No Input\\", then Internal > Channel Outputs, and pick the crowd mic channel (Input 11 here). Master L/R and the groups are in the same list."], ["mtxsetup", "Matrix (or group) Channel Setup: Outputs > Direct Outputs patches it to a local output."], ["outroute", "Direct Outputs > Local I/O > Analogue: tap Out 1 for BAND BC and Out 2 for MEAS."]], "Zero the delays first": [["grpsetup", "Group Channel Setup: Input Processing shows 0.00 ms and the right side reads Delay Off."]], "Measure each crowd mic": [["mtxinputs", "Main Menu > Matrix: tap the MEAS input\'s source name to switch it to the next crowd mic."]], "Set the crowd channel delays": [["chsetup", "Crowd mic Channel Setup: Input Processing shows the delay (23.4 ms here), and the right side shows Delay and Delay On."], ["inproc", "Input Processing: Delay On, then the Input Delay slider (0–682 ms). Fine-tune with the Delay encoder."]], "Delay the band group": [["grpsetup", "BAND BC group > Channel Setup: tap Input Processing and press Delay On, then set the farthest crowd mic time."]], "Protect the delays in snapshots": [["snapshots", "Main Menu > Session & Snapshots: Update (✓) stores the delays in the current snapshot; File… saves the session."], ["scope", "Global Scope: tap the Delay block under Input Processing to stop snapshots recalling delay."]]}')   # step title -> [(image key, caption)]
@@ -990,8 +991,8 @@ class LiveTab(ttk.Frame):
         return self._wlin
 
     def save_ui(self):
-        self.app.settings['ui'] = {'view': self.view.get(), 'sg': self.show_sg.get(), 'rta_w': self.rta_weight.get(),
-                                   'adv': self.adv_on.get(), 'fb': self.fb_on.get()}
+        self.app.settings.setdefault('ui', {}).update({'view': self.view.get(), 'sg': self.show_sg.get(), 'rta_w': self.rta_weight.get(),
+                                                       'adv': self.adv_on.get(), 'fb': self.fb_on.get()})
         save_settings(self.app.settings)
 
     def set_hover(self, where, x=0, y=0):
@@ -1825,40 +1826,66 @@ def parse_mic_file(path):
 
 
 # ================================================================= walkthrough widget
-class Walk(ttk.Frame):
-    """Step-by-step tutorial panel with a step list, text and tips."""
+WALK_FONT = ('Segoe UI', 12)
+# menu paths like "Main Menu > Matrix" and quoted button names are highlighted in the walkthroughs
+UI_PATH = re.compile(r'[A-Z][\w&/…\-]*(?: [A-Z0-9&][\w&/…\-]*)*(?: > [A-Z0-9&"][\w&/…\-"]*(?: [A-Z0-9&][\w&/…\-]*)*)+|"[^"]{1,40}"')
+SENTENCE = re.compile(r'(?<=[.!?:])\s+(?=[A-Z"(])')
 
-    def __init__(self, master, steps, extra=None, shots=None, **kw):
-        super().__init__(master, style='Panel.TFrame', padding=8, **kw)
+
+class Walk(ttk.Frame):
+    """Step-by-step tutorial panel: step list, large readable text, pictures and tips."""
+
+    def __init__(self, master, steps, extra=None, shots=None, on_done=None, img_w=500, **kw):
+        super().__init__(master, style='Panel.TFrame', padding=10, **kw)
         self.steps, self.extra, self.i = steps, extra, 0
         self.shots = shots or {}
         self.imgs = {}
-        top = ttk.Frame(self, style='Panel.TFrame')
-        top.pack(fill='x')
-        self.head = ttk.Label(top, text='', style='H.TLabel', wraplength=290, justify='left')
-        self.head.pack(side='left', fill='x', expand=True)
-        ttk.Button(top, text='▶', width=3, command=lambda: self.go(self.i + 1)).pack(side='right')
-        ttk.Button(top, text='◀', width=3, command=lambda: self.go(self.i - 1)).pack(side='right', padx=4)
-        self.lb = tk.Listbox(self, height=6, bg=PANEL2, fg=TXT, selectbackground='#2c7a7b', relief='flat',
-                             highlightthickness=0, activestyle='none', font=('Segoe UI', 9))
-        self.lb.pack(fill='x', pady=6)
+        self.on_done = on_done
+        self.img_w = img_w
+        self.count = ttk.Label(self, text='', style='Dim.TLabel')
+        self.count.pack(anchor='w')
+        self.head = tk.Label(self, text='', bg=PANEL, fg=TXT, font=('Segoe UI', 15, 'bold'), anchor='w', justify='left')
+        self.head.pack(fill='x')
+        self.head.bind('<Configure>', lambda e: self.head.config(wraplength=max(200, e.width - 4)))
+        self.lb = tk.Listbox(self, height=5, bg=PANEL2, fg=TXT, selectbackground='#2c7a7b', relief='flat',
+                             highlightthickness=0, activestyle='none', font=('Segoe UI', 11))
+        self.lb.pack(fill='x', pady=8)
         self.lb.bind('<<ListboxSelect>>', lambda e: self.lb.curselection() and self.go(self.lb.curselection()[0]))
-        self.txt = tk.Text(self, bg=PANEL, fg=TXT, relief='flat', wrap='word', font=('Segoe UI', 10), highlightthickness=0, height=14)
+        nav = ttk.Frame(self, style='Panel.TFrame')
+        nav.pack(side='bottom', fill='x', pady=(8, 0))
+        self.back_btn = ttk.Button(nav, text='◀  Back', command=lambda: self.go(self.i - 1))
+        self.back_btn.pack(side='left')
+        self.next_btn = ttk.Button(nav, text='Next  ▶', style='Accent.TButton', command=self.next)
+        self.next_btn.pack(side='right')
+        self.txt = tk.Text(self, bg=PANEL, fg=TXT, relief='flat', wrap='word', font=WALK_FONT, highlightthickness=0, height=14,
+                           padx=6, pady=4, spacing1=2, spacing2=3, cursor='arrow')
         sb = ttk.Scrollbar(self, command=self.txt.yview)
         self.txt.config(yscrollcommand=sb.set)
         sb.pack(side='right', fill='y')
         self.txt.pack(fill='both', expand=True)
-        self.txt.tag_configure('tip', foreground=AVG)
-        self.txt.tag_configure('val', foreground=PEAK, font=('Segoe UI', 10, 'bold'))
-        self.txt.tag_configure('cap', foreground=DIM, font=('Segoe UI', 9, 'italic'))
-        self.txt.tag_configure('pic', justify='center')
+        self.txt.bind('<MouseWheel>', lambda e: self.txt.yview_scroll(int(-e.delta / 120), 'units'))
+        t = self.txt
+        t.tag_configure('para', spacing3=10)
+        t.tag_configure('ui', foreground=PEAK, font=('Segoe UI', 12, 'bold'))
+        t.tag_configure('val', foreground=PEAK, background=PANEL2, font=('Segoe UI', 12, 'bold'), lmargin1=8, lmargin2=8,
+                        rmargin=8, spacing1=6, spacing3=6)
+        t.tag_configure('tiphead', foreground=AVG, font=('Segoe UI', 12, 'bold'), spacing1=10, spacing3=4)
+        t.tag_configure('tip', foreground=AVG, lmargin1=10, lmargin2=28, spacing3=6)
+        t.tag_configure('cap', foreground=DIM, font=('Segoe UI', 10, 'italic'), spacing3=10)
         self.set_steps(steps)
+
+    def next(self):
+        if self.i >= len(self.steps) - 1:
+            if self.on_done:
+                self.on_done()
+        else:
+            self.go(self.i + 1)
 
     def set_steps(self, steps):
         self.steps = steps
         self.lb.delete(0, 'end')
         for k, s in enumerate(steps):
-            self.lb.insert('end', f'{k + 1}. {s["t"]}')
+            self.lb.insert('end', f'  {k + 1}. {s["t"]}')
         self.go(0)
 
     def go(self, i):
@@ -1866,44 +1893,67 @@ class Walk(ttk.Frame):
             return
         self.i = max(0, min(len(self.steps) - 1, i))
         s = self.steps[self.i]
-        self.head.config(text=f'Step {self.i + 1} of {len(self.steps)}: {s["t"]}')
+        self.count.config(text=f'Step {self.i + 1} of {len(self.steps)}')
+        self.head.config(text=s['t'])
         self.lb.selection_clear(0, 'end')
         self.lb.selection_set(self.i)
         self.lb.see(self.i)
+        last = self.i == len(self.steps) - 1
+        self.next_btn.config(text='Finish and hide  ✓' if last and self.on_done else 'Next  ▶')
+        self.next_btn.state(['disabled'] if last and not self.on_done else ['!disabled'])
+        self.back_btn.state(['disabled'] if self.i == 0 else ['!disabled'])
         self.refresh()
+        self.txt.yview_moveto(0)
+
+    def write(self, text, base=('para',)):
+        """Insert text one sentence per paragraph, with menu paths and button names highlighted."""
+        t = self.txt
+        for sent in SENTENCE.split(text.strip()):
+            pos = 0
+            for m in UI_PATH.finditer(sent):
+                t.insert('end', sent[pos:m.start()], base)
+                t.insert('end', m.group(0), base + ('ui',))
+                pos = m.end()
+            t.insert('end', sent[pos:] + '\n', base)
 
     def refresh(self):
         s = self.steps[self.i]
         t = self.txt
+        y = t.yview()[0]
         t.config(state='normal')
         t.delete('1.0', 'end')
-        t.insert('end', s['x'] + '\n')
+        self.write(s['x'])
         if self.extra:
             v = self.extra(self.i, s)
             if v:
-                t.insert('end', '\n' + v + '\n', 'val')
+                t.insert('end', v + '\n', 'val')
         for k, (key, cap) in enumerate(self.shots.get(s['t'], [])):
             full, small = self.image(key)
             if small is None:
                 continue
-            t.insert('end', '\n')
-            t.image_create('end', image=small, padx=2, pady=4)
+            t.image_create('end', image=small, padx=2, pady=6)
             tag = f'img{k}'
             t.tag_add(tag, 'end-2c')
             t.tag_bind(tag, '<Button-1>', lambda e, im=full, c=cap: self.zoom(im, c))
             t.tag_bind(tag, '<Enter>', lambda e: t.config(cursor='hand2'))
-            t.tag_bind(tag, '<Leave>', lambda e: t.config(cursor=''))
-            t.insert('end', '\n' + cap + '  (click the picture to enlarge)\n', 'cap')
-        for tip in s.get('tips', []):
-            t.insert('end', '\nTip: ' + tip + '\n', 'tip')
+            t.tag_bind(tag, '<Leave>', lambda e: t.config(cursor='arrow'))
+            t.insert('end', '\n' + cap + '  (click to enlarge)\n', 'cap')
+        tips = s.get('tips', [])
+        if tips:
+            t.insert('end', 'Tips\n', 'tiphead')
+            for tip in tips:
+                t.insert('end', '•  ' + tip + '\n', 'tip')
         t.config(state='disabled')
+        t.yview_moveto(y)
 
     def image(self, key):
         if key not in self.imgs:
             try:
                 full = tk.PhotoImage(data=S21IMG[key], format='png')
-                f = max(1, math.ceil(full.width() / 400))
-                self.imgs[key] = (full, full.subsample(f, f) if f > 1 else full)
+                w = full.width()
+                z, d = next(((z, d) for z, d in ((1, 1), (2, 3), (1, 2), (1, 3), (1, 4)) if w * z / d <= self.img_w), (1, 4))
+                small = full if (z, d) == (1, 1) else (full.zoom(z, z).subsample(d, d) if z > 1 else full.subsample(d, d))
+                self.imgs[key] = (full, small)
             except Exception:
                 self.imgs[key] = (None, None)
         return self.imgs[key]
@@ -2045,10 +2095,12 @@ class RoomTab(ttk.Frame):
         self.lvl = tk.StringVar(value='-12')
         ttk.Label(ctl, text='Level dBFS', style='Dim.TLabel').pack(side='left', padx=(8, 2))
         ttk.Combobox(ctl, textvariable=self.lvl, values=['-30', '-24', '-18', '-12', '-6'], state='readonly', width=5).pack(side='left')
-        self.go_btn = ttk.Button(ctl, text='Measure', style='Accent.TButton', command=self.measure)
-        self.go_btn.pack(side='left', padx=8)
-        self.msg = ttk.Label(ctl, text='', style='Dim.TLabel')
-        self.msg.pack(side='left')
+        ctl2 = ttk.Frame(left, style='Panel.TFrame', padding=(6, 0, 6, 6))
+        ctl2.pack(fill='x')
+        self.go_btn = ttk.Button(ctl2, text='Measure', style='Accent.TButton', command=self.measure)
+        self.go_btn.pack(side='left', padx=4)
+        self.msg = ttk.Label(ctl2, text='', style='Dim.TLabel')
+        self.msg.pack(side='left', padx=8)
         plots = ttk.Frame(left)
         plots.pack(fill='both', expand=True, pady=(6, 0))
         self.fr = Plot(plots, -30, 12, ylabel='dB (1/6 oct)', height=230)
@@ -2057,20 +2109,40 @@ class RoomTab(ttk.Frame):
         self.dec.pack(fill='both', expand=True, pady=(6, 0))
         self.table = tk.Text(left, height=11, bg=PANEL, fg=TXT, relief='flat', font=('Consolas', 10), highlightthickness=0, wrap='none')
         self.table.pack(fill='x', pady=(6, 0))
-        right = ttk.Frame(self, width=380)
+        right = ttk.Frame(self, width=470)
         right.pack(side='right', fill='both', padx=(8, 0))
         right.pack_propagate(False)
         left.pack(side='left', fill='both', expand=True)
-        self.advice = tk.Text(right, height=14, bg=PANEL, fg=TXT, relief='flat', wrap='word', font=('Segoe UI', 10), highlightthickness=0)
+        self.advice = tk.Text(right, height=10, bg=PANEL, fg=TXT, relief='flat', wrap='word', font=('Segoe UI', 11), highlightthickness=0,
+                              padx=8, pady=6)
         self.advice.pack(fill='x')
+        gh = ttk.Frame(right, style='Panel.TFrame', padding=(10, 8))
+        gh.pack(fill='x', pady=(8, 0))
+        ttk.Label(gh, text='Measurement guide', style='H.TLabel').pack(side='left')
+        self.walk_btn = ttk.Button(gh, text='Hide', command=lambda: self.show_walk(not self.walk.winfo_ismapped()))
+        self.walk_btn.pack(side='right')
         self.advice.tag_configure('h', foreground=TRACE, font=('Segoe UI', 11, 'bold'))
         self.advice.insert('end', 'Room advisor\n', 'h')
         self.advice.insert('end', 'Press Measure. The simulated room works without hardware; for a real room pick "Speaker + mic", '
                                   'choose the output that feeds a speaker and use your measurement mic as the input device (top bar).')
-        self.walk = Walk(right, TUT['WALK'])
-        self.walk.pack(fill='both', expand=True, pady=(8, 0))
+        self.walk = Walk(right, TUT['WALK'], on_done=lambda: self.show_walk(False), img_w=430)
+        self.walk.pack(fill='both', expand=True)
+        if not app.settings.get('ui', {}).get('walk_room', True):
+            self.show_walk(False, save=False)
         self.refresh_outputs()
         self.after(200, self.poll)
+
+    def show_walk(self, on, save=True):
+        if on:
+            self.walk.pack(fill='both', expand=True)
+            self.advice.pack_configure(fill='x', expand=False)
+        else:
+            self.walk.pack_forget()
+            self.advice.pack_configure(fill='both', expand=True)
+        self.walk_btn.config(text='Hide' if on else 'Show step-by-step guide')
+        if save:
+            self.app.settings.setdefault('ui', {})['walk_room'] = on
+            save_settings(self.app.settings)
 
     def refresh_outputs(self):
         vals = []
@@ -2269,6 +2341,7 @@ class CrowdTab(ttk.Frame):
         self.align = tk.StringVar(value='Delay the band mix')
         self.guide = tk.StringVar(value='DiGiCo S21')
         left = ttk.Frame(self)
+        self.left = left
         # finder
         fb = ttk.Frame(left, style='Panel.TFrame', padding=10)
         fb.pack(fill='x')
@@ -2317,9 +2390,9 @@ class CrowdTab(ttk.Frame):
         ttk.Combobox(top, textvariable=self.align, values=['Delay the band mix', 'Align crowd mics'], state='readonly', width=18).pack(side='right')
         self.align.trace_add('write', lambda *a: self.refresh_list())
         self.tree = ttk.Treeview(lst, columns=('name', 'meas', 'pol', 'set'), show='headings', height=5)
-        for c, t, w in (('name', 'Mic', 110), ('meas', 'Measured ms', 90), ('pol', 'Polarity', 80), ('set', 'Set delay ms', 100)):
+        for c, t, w in (('name', 'Mic', 90), ('meas', 'Measured', 70), ('pol', 'Polarity', 64), ('set', 'Set delay', 70)):
             self.tree.heading(c, text=t)
-            self.tree.column(c, width=w, anchor='w')
+            self.tree.column(c, width=w, minwidth=50, anchor='w')
         self.tree.pack(fill='both', expand=True, pady=6)
         lb = ttk.Frame(lst, style='Panel.TFrame')
         lb.pack(fill='x')
@@ -2327,18 +2400,34 @@ class CrowdTab(ttk.Frame):
         self.band_lbl = ttk.Label(lb, text='', style='Dim.TLabel', wraplength=330, justify='left')
         self.band_lbl.pack(side='left', padx=10)
         # tutorial
-        right = ttk.Frame(self, width=460)
+        right = ttk.Frame(self, width=520)
+        self.right = right
         right.pack(side='right', fill='both', padx=(8, 0))
         right.pack_propagate(False)
         left.pack(side='left', fill='both', expand=True)
-        g = ttk.Frame(right, style='Panel.TFrame', padding=(8, 6))
+        g = ttk.Frame(right, style='Panel.TFrame', padding=(10, 8))
         g.pack(fill='x')
         ttk.Label(g, text='Walkthrough', style='H.TLabel').pack(side='left')
-        for v in ('General', 'DiGiCo S21'):
-            ttk.Radiobutton(g, text=v, value=v, variable=self.guide, command=self.set_guide).pack(side='right', padx=4)
-        self.walk = Walk(right, TUT['S21'], extra=self.walk_values, shots=S21SHOTS)
+        ttk.Button(g, text='✕ Hide', command=lambda: self.show_walk(False)).pack(side='right')
+        for v in ('DiGiCo S21', 'General'):
+            ttk.Radiobutton(g, text=v, value=v, variable=self.guide, command=self.set_guide).pack(side='right', padx=6)
+        self.walk = Walk(right, TUT['S21'], extra=self.walk_values, shots=S21SHOTS, on_done=lambda: self.show_walk(False))
         self.walk.pack(fill='both', expand=True)
+        self.walk_btn = ttk.Button(bb, text='Hide walkthrough', command=lambda: self.show_walk(not self.right.winfo_ismapped()))
+        self.walk_btn.pack(side='left', padx=(24, 0))
+        if not app.settings.get('ui', {}).get('walk_crowd', True):
+            self.show_walk(False, save=False)
         self.reset()
+
+    def show_walk(self, on, save=True):
+        if on:
+            self.right.pack(side='right', fill='both', padx=(8, 0), before=self.left)
+        else:
+            self.right.pack_forget()
+        self.walk_btn.config(text='Hide walkthrough' if on else 'Show walkthrough')
+        if save:
+            self.app.settings.setdefault('ui', {})['walk_crowd'] = on
+            save_settings(self.app.settings)
 
     def set_guide(self):
         s21 = self.guide.get() == 'DiGiCo S21'
@@ -2417,8 +2506,8 @@ class CrowdTab(ttk.Frame):
         col = GOOD if q == 'good' else WARN if q == 'fair' else BAD
         self.big.config(text=f'{ms:6.1f} ms', foreground=col)
         dist = ms / 1000 * self.c_sound()
-        self.info.config(text=f'≈ {dist:.1f} m of sound travel\nPolarity: {"INVERTED, flip the crowd mic" if inv else "normal"}\n'
-                              f'Confidence {conf:.0f} ({q}), stable ±{stab:.2f} ms' + (f'\n(+{self.ref_off():.2f} ms for the reference mic)' if self.ref_off() else ''))
+        self.info.config(text=f'≈ {dist:.1f} m of sound travel\nPolarity: {"INVERTED (flip it)" if inv else "normal"}\n'
+                              f'Confidence {conf:.0f} ({q})\nStable ±{stab:.2f} ms' + (f'\n(+{self.ref_off():.2f} ms for the reference mic)' if self.ref_off() else ''))
         step = 4
         lm = lags[::step] / fs * 1000 + self.ref_off()
         self.corr.line('c', lm, rr[::step] / max(ar[i], 1e-20), fill=TRACE, width=1)

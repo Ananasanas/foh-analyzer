@@ -1,4 +1,4 @@
-FOH Analyzer - Python desktop version 1.2
+FOH Analyzer - Python desktop version 1.3
 =========================================
 
 What it does
@@ -18,6 +18,8 @@ What it does
 - Crowd mic delay tab: two-channel delay finder (input 1 = band mix, input 2 = crowd mic) with
   polarity check, distance calculator, crowd mic list and the General / DiGiCo S21 walkthroughs.
   The S21 steps include screenshots from the DiGiCo offline editor (click to enlarge).
+- Walkthroughs (crowd mic and room guide) use large text, one sentence per line, highlighted menu
+  paths, Back/Next buttons and a Hide/Show button; "Finish and hide" on the last step.
 
 Windows: how to start
 1. Install Python 3 from https://www.python.org/downloads/ (tick "Add python.exe to PATH").
