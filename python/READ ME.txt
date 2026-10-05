@@ -1,4 +1,4 @@
-FOH Analyzer - Python desktop version 1.3
+FOH Analyzer - Python desktop version 1.4
 =========================================
 
 What it does
@@ -33,6 +33,8 @@ Without a microphone, pick "Demo mix", "Pink noise", "WAV file..." or "Simulated
 in Source to try everything.
 
 Notes
+- Screen: sharp on Windows display scaling (125 %, 150 %...). On large screens such as 1920x1200
+  it opens full screen with larger text and panels; on short laptop screens the graphs get smaller.
 - SPL numbers are only real after you calibrate (until then an assumed offset is used).
 - For the crowd mic delay finder the audio interface must give two separate input channels.
 - This version has not yet been tested with real audio hardware.

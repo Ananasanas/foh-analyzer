@@ -30,7 +30,7 @@ except Exception as e:  # missing module or missing PortAudio
     SD_ERR = str(e) or e.__class__.__name__
 
 APP = 'FOH Analyzer'
-VERSION = '1.3'
+VERSION = '1.4'
 SETTINGS = os.path.join(os.path.expanduser('~'), '.foh_analyzer.json')
 TUT = json.loads('{"WALK": [{"t": "Set up the measurement mic", "x": "Use an omnidirectional measurement mic on a stand at ear height (about 1.2 m seated, 1.7 m standing), pointing up or toward the speakers. Keep it at least 1 m from walls and off tables and consoles. In your computer\'s sound settings turn off any mic enhancements, and set the interface gain so speech near the mic peaks around −30 dBFS.", "tips": []}, {"t": "Calibrate the level", "x": "Fit a 94 dB calibrator over the capsule and use the calibrator tab, or match a trusted SPL meter. RT60 and the response shape do not need calibration, but noise rating and level checks do. Skip this if you only care about the room\'s sound.", "tips": []}, {"t": "Load the mic file", "x": "If your mic came with a calibration file (UMIK, Dayton and similar), load it so the high frequencies are measured correctly. Optional for most room work.", "tips": []}, {"t": "Describe the room", "x": "Enter length, width and height in metres and choose what the room is used for. This sets the RT60 target, the Schroeder frequency and the predicted room modes.", "tips": []}, {"t": "Measure background noise", "x": "With the system muted and the room as it will be during use (air conditioning on, no music), measure 5 seconds of background noise. You get an NR rating per octave.", "tips": []}, {"t": "Set the sweep level", "x": "Turn the amplifier or mixer output down first. Run one sweep at −30 dBFS, then raise the level until the decay range reads 45 dB or more without clipping. The sweep is a rising tone from 20 Hz to 20 kHz. Warn people in the room, and protect tweeters: never start loud.", "tips": []}, {"t": "Measure several positions", "x": "Measure 3 to 6 listening positions: FOH, centre, left, right, rear, balcony. Avoid the exact centre line and spots right against walls. Name each one before you press Measure. The advisor averages all ticked positions, which is what you should EQ to.", "tips": []}, {"t": "Read the results", "x": "Frequency response: the full-room curve shows what listeners hear; peaks in the shaded modal region are room modes. Direct + early shows the speaker itself above about 250 Hz. Decay: RT60 (T30/T20) is how long sound takes to die by 60 dB; EDT is what the ear perceives. C80 and STI tell you how clear music and speech will be.", "tips": []}, {"t": "Fix, then re-measure", "x": "Work in this order: speaker placement and aiming, sub placement and delay alignment, room treatment for RT60 and reflections, and EQ last. Use the room advisor\'s EQ list as a starting point, change one thing at a time, and measure the same positions again to compare.", "tips": []}], "DWALK": [{"t": "Why crowd mics need delay", "x": "Crowd (audience) mics pick up the PA as well as the audience. That PA sound reaches them late: about 2.9 ms for every metre from the speakers. Blended with close mics in a broadcast, stream or recording mix, the late copy causes flamming and comb filtering, so the mix sounds thin and phasey. Aligning them fixes that.", "tips": ["Applause and singing are local to the mic, so they never need aligning. Only the PA bleed does.", "In-ear ambience mics on stage are usually left undelayed: low latency matters more there."]}, {"t": "Choose the time reference", "x": "The reference is \\"time zero\\": normally the console\'s band mix (a matrix or aux carrying the close mics), because that is what the crowd mics must line up with. If you can\'t send it to the interface, a mic close to the main PA works too.", "tips": ["With several crowd mics, measure each against the same reference."]}, {"t": "Place the crowd mics", "x": "Point the mics at the audience, not at the PA, and keep them out of the PA\'s main coverage where you can (high on the truss, at the side of the stage, or at FOH facing the crowd). Matched left and right pairs at the same distance keep the image steady.", "tips": ["Cardioid or shotgun mics aimed away from the PA reduce bleed, which also makes delay less critical.", "Measure the distance from the main PA hang, not from the stage."]}, {"t": "Place the reference mic", "x": "Best is no reference mic at all: feed the console band mix into input 1. It is exactly what the crowd mics must line up with, and the reading is the full delay from the PA to the crowd mic. If you have to use a mic as the reference, put it close to the PA, never near the crowd mics: about 1 m in front of the speaker the crowd mic hears most, on its axis and at the height of its high-frequency driver. The delay finder then only sees the extra path from the reference mic to the crowd mic, so set \\"Reference is\\" to \\"Mic at the PA\\" and enter that distance: the program adds the missing time back (2.9 ms per metre).", "tips": ["Same speaker, same side: measure the left crowd mic against a reference at the left hang and the right crowd mic against the right hang.", "Never put the reference next to a crowd mic: it would read about 0 ms and tell you nothing. Every crowd mic must be farther from the PA than the reference.", "Put it in front of the tops, not on a subwoofer: subs are often time-offset from the tops and smear the reading.", "Mute delay towers and front fills while measuring, or the crowd mic hears several arrivals and the spike splits.", "A mic reference misses the PA processor latency (often 1 to 3 ms) that the band mix really has, so check the result by ear or with the console bus afterwards."]}, {"t": "Estimate with the calculator", "x": "Enter the distance from the PA to each crowd mic and the air temperature. The calculator gives the delay in ms and in samples. Add each mic to the list. This is a good starting point if you cannot measure.", "tips": []}, {"t": "Wire up the delay finder", "x": "Connect a 2-channel interface: the reference (console band mix) into input 1 and the crowd mic into input 2. Set \\"Reference on\\" to match. Turn off any processing on the interface inputs. Choose a search range longer than the expected delay.", "tips": []}, {"t": "Measure the delay", "x": "Play music or pink noise through the PA at a normal level. Watch the correlation plot: one tall spike should stand out. Wait until confidence reads good and stability is within ±0.2 ms, then add the reading to the crowd mic list. A downward spike means the mic is in reverse polarity.", "tips": []}, {"t": "Apply the delay", "x": "Pick a strategy in the crowd mic list. \\"Delay the band mix\\" delays the close-mic bus by the farthest crowd mic delay and delays the nearer crowd mics to match: everything lines up. Best for broadcast and streaming, but tell the video team the audio is now later. \\"Align crowd mics\\" delays the nearer crowd mics to match the farthest: use it when you cannot delay the band, and keep crowd mics low under music.", "tips": ["Recording for later? Leave everything undelayed and slide the crowd tracks earlier in the DAW by the measured time.", "Flip polarity on any mic marked Ø."]}, {"t": "Fine-tune by ear", "x": "Solo the reference and one crowd mic at similar levels. Nudge the delay ±0.5 ms and the polarity until the low end sounds fullest and the sound stops \\"swirling\\". Then set the crowd level so it adds space without smearing the drums.", "tips": []}, {"t": "Re-check during the show", "x": "Sound slows down in cold air and speeds up in heat: at 30 m a 10 °C change moves the delay by about 1.5 ms. Re-measure after doors when the room warms up, and whenever the PA or the mics move.", "tips": []}], "S21": [{"t": "Plan the broadcast routing", "x": "The words used in this walkthrough: \\"band channels\\" are all the input channels of the band (drums, bass, guitars, keys, vocals): everything except the crowd mics. \\"L/R\\" is the main mix bus that drives the PA. \\"BAND BC\\" (band broadcast) is a stereo group you create for the broadcast only: route every band channel to it as well as to L/R (Channel Setup > Outputs > Group Assign, then tap the group and Master), so it carries the same band mix but feeds only the broadcast. Because it is separate from L/R, it can be delayed without touching the PA. \\"BCAST\\" is the stereo matrix that goes to the broadcast truck, recorder or stream. On the S21 every input channel can also send straight to a matrix and has its own delay, so send each crowd mic channel directly to BCAST and put each crowd mic\'s delay on its own channel. BAND BC also goes into BCAST, and the band delay goes on the BAND BC group output.", "tips": ["Why not delay the band channels? A channel delay sits inside the channel, before all its outputs. Every band channel feeds L/R (the PA) and the monitor auxes, so a delay on, say, the kick channel makes the kick late in the PA and in the monitors too. A delay on the BAND BC group output only affects what leaves that group: the broadcast.", "Crowd mics normally feed only the broadcast, so delaying their channels is safe. If a crowd mic also feeds the PA or the in-ears, the delay goes there too.", "No spare group? Send the band channels straight to BCAST as well and use \\"Align crowd mics\\": the crowd mics line up with each other, but the band stays early, so keep the crowd low under music.", "A delay on the BCAST matrix output moves band and crowd together, so it does not align anything. Leave it at 0 unless video needs the whole feed later.", "Already feeding L/R into BCAST? Then the crowd mic channel delays line up the crowd mics with each other, but L/R cannot be delayed because it is the PA. Either keep the crowd low under music, or give the band its own broadcast delay: a separate matrix \\"BC BAND\\" fed by L/R with output delay set to the farthest crowd mic, sent to the broadcast as its own stem next to a \\"BC CROWD\\" matrix fed by the crowd channels."]}, {"t": "Patch two measurement outputs", "x": "Reference: open the BAND BC group (tap its name to open Channel Setup), tap Outputs > Direct Outputs, choose Local I/O > Analogue and tap Out 1. Crowd mic: open Main Menu > Matrix, pick a free matrix input, tap \\"No Input\\" and choose Internal > Channel Outputs > the crowd mic channel. Send that matrix input only to one spare matrix, name it \\"MEAS\\", and patch MEAS the same way (its Channel Setup > Direct Outputs) to Out 2. Both signals then go through the console the same way, so the console\'s own latency cancels out of the measurement.", "tips": ["The MEAS send comes after the channel delay, so in the verify step it shows the delayed result.", "The crowd channel\'s direct output works too, if it is set up in your session.", "Name the outputs in the patch so the next engineer knows what they are."]}, {"t": "Where the reference comes from", "x": "On the S21 the reference should be electrical: BAND BC from local out 1, not a microphone. It is exactly the signal the broadcast mix lines up with, and the reading includes the console and PA processing latency the crowd mics really hear. Only if you cannot get a console output to the laptop, use a measurement mic as the reference: about 1 m in front of the main hang or stack on the same side as the crowd mic, on axis, at the height of the high-frequency driver, and never near the crowd mics. Set \\"Reference is\\" to \\"Mic at the PA\\" and enter its distance; the program adds that time back.", "tips": ["Same speaker, same side: measure the left crowd mic against a reference at the left hang and the right crowd mic against the right hang.", "Never put the reference next to a crowd mic: it would read about 0 ms and tell you nothing. Every crowd mic must be farther from the PA than the reference.", "Put it in front of the tops, not on a subwoofer: subs are often time-offset from the tops and smear the reading.", "Mute delay towers and front fills while measuring, or the crowd mic hears several arrivals and the spike splits.", "A mic reference misses the PA processor latency (often 1 to 3 ms) that the band mix really has, so check the result by ear or with the console bus afterwards."]}, {"t": "Connect the laptop interface", "x": "Cable local out 1 to input 1 and local out 2 to input 2 of a 2-channel USB interface. Set the interface to line level, turn off any input processing, and set the gains so both meters in the delay finder peak around −20 dBFS. Choose \\"Interface, 2 channels\\" and \\"Reference on: Input 1\\" in the delay finder below.", "tips": []}, {"t": "Zero the delays first", "x": "Before measuring, make sure nothing is already delayed. Tap each crowd mic channel\'s name to open Channel Setup: the Input Processing box shows the delay, and the right-hand side shows the Delay value with \\"Delay Off / Click to enable\\". It should read Delay Off or 0.00 ms. Do the same for the BAND BC group and the BCAST matrix (groups and matrices have the same Channel Setup), and set Input Polarity to Standard on the crowd channels.", "tips": ["Delay values on DiGiCo can be shown in ms or as a distance. Use ms so the numbers match this program."]}, {"t": "Play program through the PA", "x": "Play music or pink noise through the PA at a normal show level with the band channels feeding BAND BC. The crowd mic must hear the PA, so do this with the PA on and the room as quiet as you can get it otherwise.", "tips": []}, {"t": "Measure each crowd mic", "x": "Watch the delay finder until confidence reads good and stability is within ±0.2 ms, type the mic\'s name and press \\"Add to crowd mic list\\". Then in Main Menu > Matrix, tap the MEAS matrix input\'s source name and pick the next crowd mic channel (only one crowd mic in MEAS at a time), press Reset average, and repeat for every crowd mic.", "tips": ["A downward spike means the mic is in reverse polarity; it is marked Ø in the list.", "Can\'t measure? Add the mics from the calculator using the distance from the PA."]}, {"t": "Set the crowd channel delays", "x": "Set \\"Delay the band mix\\" in the crowd mic list. On each crowd mic channel tap its name to open Channel Setup and tap the Input Processing box. Press Delay On, drag the Input Delay slider (0 to 682 ms) near the value, then fine-tune it with the Delay encoder on the right (the mouse wheel in the offline editor) until it reads the value from the list. The nearer mics now wait for the farthest one, and because the crowd channels feed BCAST directly, the delay goes straight into the broadcast mix:", "tips": []}, {"t": "Delay the band group", "x": "Find the BAND BC group (press Space for the Console Overview; groups are red). Tap its name to open Channel Setup, tap Input Processing, press Delay On and set the arrival time of the farthest crowd mic (the largest value in the crowd mic list). Leave the BCAST matrix output undelayed.", "tips": ["Only the group gets this delay, never the band channels, so the PA and monitors stay on time.", "Using L/R into BCAST instead of a band group? Never delay L/R itself (that is the PA). Skip this step and use \\"Align crowd mics\\" in the list, or delay a separate \\"BC BAND\\" matrix fed by L/R by this amount and send it as its own stem.", "Tell the video or broadcast team the audio is now this much later, so they can keep lip sync."]}, {"t": "Verify with the delay finder", "x": "Re-measure with the delays switched on: patch BAND BC (now delayed) to input 1 and each crowd mic via the MEAS matrix to input 2 again. Every crowd mic should now read close to 0 ms (within about ±0.5 ms) with normal polarity. If one reads off, correct that channel\'s delay by the difference.", "tips": []}, {"t": "Fine-tune by ear", "x": "Solo BAND BC and one crowd mic at similar levels in your headphones. Nudge that crowd channel\'s delay in 0.1–0.5 ms steps and try the polarity button until the low end sounds fullest and the sound stops swirling. Then bring the crowd level down to where it adds space without smearing the drums.", "tips": []}, {"t": "Protect the delays in snapshots", "x": "Delays are part of each snapshot. Either open Main Menu > Session & Snapshots and press Update (✓) on every snapshot after setting them, or take delay out of the recall scope: Session & Snapshots > Global Scope, and tap the Delay block under Input Processing so snapshots stop recalling it (or use Safes in each channel\'s Channel Setup). Then save the session with File… and keep a copy on a USB stick.", "tips": ["Write the values on the console notes or a strip of tape too: quicker than digging through menus during the show."]}, {"t": "Re-check during the show", "x": "As the room fills up and warms, sound travels faster and the crowd mics arrive earlier: about 1.5 ms less at 30 m for a 10 °C rise. Re-measure after doors open, and adjust the crowd channel delays and the BAND BC delay if needed.", "tips": []}]}')
 S21SHOTS = json.loads('{"Plan the broadcast routing": [["overview", "Console Overview (Space key, or Interface > Toggle Channel Overview): groups are red, matrices green. One group becomes BAND BC, one matrix BCAST."], ["grpassign", "Band channel > Channel Setup > Outputs > Group Assign: tap the BAND BC group and keep Master on. Crowd mic channels get no group."], ["mainmenu", "Main Menu: Matrix opens the Matrix Inputs page where channels and groups are fed into matrices."], ["mtxinputs", "Matrix Inputs: each column is one matrix input. Its source (here Input 11, a crowd mic) sends to Matrix 1–8 with its own level."]], "Patch two measurement outputs": [["mtxsrc", "Matrix input source: tap \\"No Input\\", then Internal > Channel Outputs, and pick the crowd mic channel (Input 11 here). Master L/R and the groups are in the same list."], ["mtxsetup", "Matrix (or group) Channel Setup: Outputs > Direct Outputs patches it to a local output."], ["outroute", "Direct Outputs > Local I/O > Analogue: tap Out 1 for BAND BC and Out 2 for MEAS."]], "Zero the delays first": [["grpsetup", "Group Channel Setup: Input Processing shows 0.00 ms and the right side reads Delay Off."]], "Measure each crowd mic": [["mtxinputs", "Main Menu > Matrix: tap the MEAS input\'s source name to switch it to the next crowd mic."]], "Set the crowd channel delays": [["chsetup", "Crowd mic Channel Setup: Input Processing shows the delay (23.4 ms here), and the right side shows Delay and Delay On."], ["inproc", "Input Processing: Delay On, then the Input Delay slider (0–682 ms). Fine-tune with the Delay encoder."]], "Delay the band group": [["grpsetup", "BAND BC group > Channel Setup: tap Input Processing and press Delay On, then set the farthest crowd mic time."]], "Protect the delays in snapshots": [["snapshots", "Main Menu > Session & Snapshots: Update (✓) stores the delays in the current snapshot; File… saves the session."], ["scope", "Global Scope: tap the Delay block under Input Processing to stop snapshots recalling delay."]]}')   # step title -> [(image key, caption)]
@@ -53,6 +53,47 @@ S21IMG = {
 BG, PANEL, PANEL2, LINE = '#0e1116', '#161b22', '#1d242e', '#2a3340'
 TXT, DIM, TRACE, PEAK, AVG = '#d7dee8', '#8a96a8', '#4fd1c5', '#f6ad55', '#90cdf4'
 WARN, BAD, GOOD = '#f6ad55', '#fc8181', '#68d391'
+
+
+# ---------------------------------------------------------------- screen scaling
+SCALE = 1.0   # screen DPI / 96 (Windows display scaling, e.g. 1.25 at 125 %)
+SHORT = False  # short screen (laptops, under about 900 logical pixels high)
+BIG = False   # large desktop (about 1700+ logical pixels wide, e.g. 1920x1200 at 100 %)
+
+
+def px(n):
+    """Pixel size for this screen: follows Windows scaling, and grows on large screens."""
+    return int(round(n * SCALE * (1.25 if BIG else 1.0)))
+
+
+def fs(n):
+    """Font size in points (Tk already converts points with the screen DPI); larger on big screens."""
+    return n + (2 if BIG else 0)
+
+
+def setup_screen(root):
+    global SCALE, BIG, SHORT
+    try:
+        # Windows scaling comes in 25 % steps; round so 96-100 dpi counts as 100 %
+        SCALE = max(1.0, round(float(root.winfo_fpixels('1i')) / 96.0 * 4) / 4)
+    except Exception:
+        SCALE = 1.0
+    BIG = root.winfo_screenwidth() / SCALE >= 1700 and root.winfo_screenheight() / SCALE >= 1000
+    SHORT = root.winfo_screenheight() / SCALE < 900
+
+
+def enable_dpi_awareness():
+    """Without this, Windows blurs the whole window when display scaling is above 100 %."""
+    if sys.platform != 'win32':
+        return
+    try:
+        import ctypes
+        try:
+            ctypes.windll.shcore.SetProcessDpiAwareness(1)
+        except Exception:
+            ctypes.windll.user32.SetProcessDPIAware()
+    except Exception:
+        pass
 
 
 def db(x, floor=1e-20):
@@ -323,7 +364,7 @@ class Plot(tk.Canvas):
         self.ymin, self.ymax, self.xmin, self.xmax, self.logx = ymin, ymax, xmin, xmax, logx
         self.ylabel, self.xlabel = ylabel, xlabel
         self.items = {}
-        self.ml, self.mr, self.mt, self.mb = 44, 10, 8, 22
+        self.ml, self.mr, self.mt, self.mb = px(44), px(10), px(8), px(22)
         self.bind('<Configure>', lambda e: self.redraw())
         self.data = {}
 
@@ -364,19 +405,19 @@ class Plot(tk.Canvas):
         for t in ticks:
             x = float(self.X(t))
             self.create_line(x, self.mt, x, H - self.mb, fill=LINE)
-            self.create_text(x, H - self.mb + 10, text=lab(t), fill=DIM, font=('Segoe UI', 8))
+            self.create_text(x, H - self.mb + 10, text=lab(t), fill=DIM, font=('Segoe UI', fs(8)))
         span = self.ymax - self.ymin
         hpx = max(20, H - self.mt - self.mb)
-        step = next((c for c in (1, 2, 3, 5, 6, 10, 20, 30, 50) if span / c * 22 <= hpx), 50)
+        step = next((c for c in (1, 2, 3, 5, 6, 10, 20, 30, 50) if span / c * px(24) <= hpx), 50)
         v = math.ceil(self.ymin / step) * step
         while v <= self.ymax:
             y = float(self.Y(v))
             self.create_line(self.ml, y, W - self.mr, y, fill=LINE)
-            self.create_text(self.ml - 4, y, text=f'{v:g}', anchor='e', fill=DIM, font=('Segoe UI', 8))
+            self.create_text(self.ml - 4, y, text=f'{v:g}', anchor='e', fill=DIM, font=('Segoe UI', fs(8)))
             v += step
-        self.create_text(4, self.mt, text=self.ylabel, anchor='nw', fill=DIM, font=('Segoe UI', 8))
+        self.create_text(4, self.mt, text=self.ylabel, anchor='nw', fill=DIM, font=('Segoe UI', fs(8)))
         if self.xlabel:
-            self.create_text(W - self.mr, H - self.mb - 4, text=self.xlabel, anchor='se', fill=DIM, font=('Segoe UI', 8))
+            self.create_text(W - self.mr, H - self.mb - 4, text=self.xlabel, anchor='se', fill=DIM, font=('Segoe UI', fs(8)))
         for k, d in list(self.data.items()):
             self._draw(k, *d)
 
@@ -410,14 +451,14 @@ class Plot(tk.Canvas):
             for xi, yi, txt in zip(x, y, opts.pop('labels', []) if False else opts.get('labels', [])):
                 px, py = float(self.X(xi)), float(self.Y(yi))
                 self.items[key].append(self.create_oval(px - 4, py - 4, px + 4, py + 4, outline=opts.get('fill', BAD), width=2, tags=(key,)))
-                self.items[key].append(self.create_text(px, py - 12, text=txt, fill=opts.get('fill', BAD), font=('Segoe UI', 8, 'bold'), tags=(key,)))
+                self.items[key].append(self.create_text(px, py - 12, text=txt, fill=opts.get('fill', BAD), font=('Segoe UI', fs(8), 'bold'), tags=(key,)))
         elif kind == 'zones':
             self.delete(key)
             self.items[key] = []
             H = self.winfo_height()
             for (lo, hi, col, lab) in x:
                 r = self.create_rectangle(float(self.X(lo)), self.mt, float(self.X(hi)), H - self.mb, fill=col, stipple='gray12', outline='', tags=(key,))
-                t = self.create_text(float(self.X(math.sqrt(lo * hi))), self.mt + 8, text=lab, fill=col, font=('Segoe UI', 8), tags=(key,))
+                t = self.create_text(float(self.X(math.sqrt(lo * hi))), self.mt + 8, text=lab, fill=col, font=('Segoe UI', fs(8)), tags=(key,))
                 self.items[key] += [r, t]
                 self.tag_lower(r)
 
@@ -523,9 +564,16 @@ class App(tk.Tk):
 
     def __init__(self):
         super().__init__()
+        setup_screen(self)
         self.title(f'{APP} {VERSION}')
-        self.geometry('1280x860')
-        self.minsize(980, 640)
+        sw, sh = self.winfo_screenwidth(), self.winfo_screenheight()
+        w, h = min(px(1280), sw - 40), min(px(860), sh - 80)
+        if BIG:
+            w, h = sw - 40, sh - 80
+        self.geometry(f'{w}x{h}+{max(0, (sw - w) // 2)}+{max(0, (sh - h) // 3)}')
+        self.minsize(min(px(980), sw - 40), min(px(640), sh - 80))
+        if BIG and sys.platform == 'win32':
+            self.state('zoomed')  # fill the screen
         self.configure(bg=BG)
         self.settings = load_settings()
         self.eng = Engine(48000)
@@ -552,17 +600,17 @@ class App(tk.Tk):
     def _style(self):
         s = ttk.Style(self)
         s.theme_use('clam')
-        f = ('Segoe UI', 10)
+        f = ('Segoe UI', fs(10))
         s.configure('.', background=BG, foreground=TXT, fieldbackground=PANEL2, bordercolor=LINE, font=f,
                     lightcolor=PANEL, darkcolor=PANEL, troughcolor=PANEL2, selectbackground='#2c7a7b')
         s.configure('TFrame', background=BG)
         s.configure('Panel.TFrame', background=PANEL)
         s.configure('TLabel', background=BG, foreground=TXT)
         s.configure('Panel.TLabel', background=PANEL)
-        s.configure('Dim.TLabel', background=PANEL, foreground=DIM, font=('Segoe UI', 9))
-        s.configure('Big.TLabel', background=PANEL, foreground=TRACE, font=('Consolas', 30, 'bold'))
-        s.configure('Mid.TLabel', background=PANEL, foreground=TXT, font=('Consolas', 13))
-        s.configure('H.TLabel', background=PANEL, foreground=TXT, font=('Segoe UI', 11, 'bold'))
+        s.configure('Dim.TLabel', background=PANEL, foreground=DIM, font=('Segoe UI', fs(9)))
+        s.configure('Big.TLabel', background=PANEL, foreground=TRACE, font=('Consolas', fs(30), 'bold'))
+        s.configure('Mid.TLabel', background=PANEL, foreground=TXT, font=('Consolas', fs(13)))
+        s.configure('H.TLabel', background=PANEL, foreground=TXT, font=('Segoe UI', fs(11), 'bold'))
         s.configure('TButton', background=PANEL2, foreground=TXT, padding=(10, 4))
         s.map('TButton', background=[('active', '#2a3646')])
         s.configure('Accent.TButton', background='#2c7a7b', foreground='white')
@@ -573,6 +621,12 @@ class App(tk.Tk):
         s.configure('TCombobox', fieldbackground=PANEL2, background=PANEL2, foreground=TXT, arrowcolor=TXT)
         s.map('TCombobox', fieldbackground=[('readonly', PANEL2)], foreground=[('readonly', TXT)],
               selectbackground=[('readonly', PANEL2)], selectforeground=[('readonly', TXT)], background=[('active', '#2a3646')])
+        self.option_add('*TCombobox.font', f)
+        self.option_add('*TEntry.font', f)
+        self.option_add('*TSpinbox.font', f)
+        self.option_add('*TCombobox*Listbox.font', f)
+        s.configure('Treeview', font=f)
+        s.configure('Treeview.Heading', font=('Segoe UI', fs(10), 'bold'))
         self.option_add('*TCombobox*Listbox.background', PANEL2)
         self.option_add('*TCombobox*Listbox.foreground', TXT)
         s.configure('TRadiobutton', background=PANEL, foreground=TXT)
@@ -581,7 +635,7 @@ class App(tk.Tk):
         s.map('TCheckbutton', background=[('active', PANEL)])
         s.configure('TLabelframe', background=PANEL, bordercolor=LINE)
         s.configure('TLabelframe.Label', background=PANEL, foreground=DIM)
-        s.configure('Treeview', background=PANEL2, fieldbackground=PANEL2, foreground=TXT, rowheight=22)
+        s.configure('Treeview', background=PANEL2, fieldbackground=PANEL2, foreground=TXT, rowheight=px(22))
         s.configure('Treeview.Heading', background=PANEL, foreground=DIM)
         s.configure('TEntry', fieldbackground=PANEL2, foreground=TXT, insertcolor=TXT)
         s.configure('TSpinbox', fieldbackground=PANEL2, foreground=TXT, arrowcolor=TXT)
@@ -732,7 +786,7 @@ class App(tk.Tk):
             if not hasattr(self, '_mbars'):
                 self._mbars = [self.meter.create_rectangle(0, 4, 0, 11, fill=TRACE, outline=''),
                                self.meter.create_rectangle(0, 15, 0, 19, fill='#2c7a7b', outline=''),
-                               self.meter.create_text(146, 11, text='', fill=BAD, anchor='e', font=('Segoe UI', 8, 'bold'))]
+                               self.meter.create_text(146, 11, text='', fill=BAD, anchor='e', font=('Segoe UI', fs(8), 'bold'))]
             for item, v, y0, y1 in ((self._mbars[0], rms, 4, 11), (self._mbars[1], pk, 15, 19)):
                 d = 20 * math.log10(max(v, 1e-6))
                 self.meter.coords(item, 0, y0, max(0, min(150, (d + 60) / 60 * 150)), y1)
@@ -818,11 +872,11 @@ class LiveTab(ttk.Frame):
         ttk.Checkbutton(ctl2, text='Freeze', variable=self.freeze).pack(side='left', padx=6)
         self.readout = ttk.Label(ctl2, text='Hover over the graph to read a frequency', style='Dim.TLabel', width=1, anchor='e')
         self.readout.pack(side='right', padx=6, fill='x', expand=True)
-        self.plot = Plot(left, 20, 120, ylabel='dB SPL', height=360)
+        self.plot = Plot(left, 20, 120, ylabel='dB SPL', height=px(250 if SHORT else 360))
         self.plot.pack(fill='both', expand=True, pady=(6, 0))
         self.plot.bind('<Motion>', lambda e: self.set_hover('plot', e.x, e.y))
         self.plot.bind('<Leave>', lambda e: self.set_hover(None))
-        self.sg = tk.Canvas(left, bg=BG, highlightthickness=0, height=130)
+        self.sg = tk.Canvas(left, bg=BG, highlightthickness=0, height=px(90 if SHORT else 130))
         self.sg.pack(fill='x')
         self.sg_img = None
         self.sg_top = None
@@ -843,13 +897,13 @@ class LiveTab(ttk.Frame):
         self.adv_btn.pack(side='right')
         ttk.Combobox(head, textvariable=self.hold, values=['5 s', '15 s', '30 s', '60 s'], state='readonly', width=5).pack(side='right', padx=4)
         ttk.Label(head, text='Keep tips for', style='Dim.TLabel').pack(side='right')
-        self.adv_txt = tk.Text(self.adv, height=10, bg=PANEL, fg=TXT, relief='flat', wrap='word', font=('Segoe UI', 10), highlightthickness=0)
+        self.adv_txt = tk.Text(self.adv, height=6 if SHORT else 10, bg=PANEL, fg=TXT, relief='flat', wrap='word', font=('Segoe UI', fs(10)), highlightthickness=0)
         self.adv_txt.pack(fill='x', pady=(6, 0))
         for tag, col in (('warn', WARN), ('bad', BAD), ('info', AVG), ('good', GOOD)):
-            self.adv_txt.tag_configure(tag, foreground=col, font=('Segoe UI', 10, 'bold'))
+            self.adv_txt.tag_configure(tag, foreground=col, font=('Segoe UI', fs(10), 'bold'))
         self.adv_txt.tag_configure('dim', foreground=DIM)
         # SPL panel
-        right = ttk.Frame(self, style='Panel.TFrame', padding=10, width=300)
+        right = ttk.Frame(self, style='Panel.TFrame', padding=10, width=px(300))
         right.pack(side='right', fill='y', padx=(8, 0))
         right.pack_propagate(False)  # fixed width: changing text must not shift the layout
         ttk.Label(right, text='SPL meter', style='H.TLabel').pack(anchor='w')
@@ -878,17 +932,17 @@ class LiveTab(ttk.Frame):
         self.fb_tree = ttk.Treeview(self.fb_box, columns=('f', 'geq', 'ex', 'hits', 'last'), show='headings', height=6)
         for c, t, w in (('f', 'Freq', 72), ('geq', 'GEQ', 58), ('ex', '+dB', 42), ('hits', 'Hits', 38), ('last', 'Last', 56)):
             self.fb_tree.heading(c, text=t)
-            self.fb_tree.column(c, width=w, minwidth=w, anchor='w', stretch=False)
+            self.fb_tree.column(c, width=px(w), minwidth=px(w), anchor='w', stretch=False)
         self.fb_tree.tag_configure('live', foreground=BAD)
         self.fb_tree.pack(fill='both', expand=True, pady=4)
         self.fb_tree.bind('<<TreeviewSelect>>', lambda e: self.fb_select())
-        self.fb_info = ttk.Label(self.fb_box, text='', style='Dim.TLabel', wraplength=260, justify='left')
+        self.fb_info = ttk.Label(self.fb_box, text='', style='Dim.TLabel', wraplength=px(260), justify='left')
         self.fb_info.pack(anchor='w')
-        self.cal_lbl = ttk.Label(right, text='', style='Dim.TLabel', wraplength=260, justify='left')
+        self.cal_lbl = ttk.Label(right, text='', style='Dim.TLabel', wraplength=px(260), justify='left')
         self.cal_lbl.pack(anchor='w', pady=(10, 0))
         if self.fb_on.get():
             self.fb_box.pack(fill='both', expand=True, pady=(10, 0), before=self.cal_lbl)
-        self.hist = Plot(right, 40, 120, xmin=-60, xmax=0, logx=False, ylabel='dB', height=110, xlabel='s', width=270)
+        self.hist = Plot(right, 40, 120, xmin=-60, xmax=0, logx=False, ylabel='dB', height=px(110), xlabel='s', width=px(270))
         self.hist.pack(fill='x', pady=(8, 0))
         self.make_bands()
 
@@ -1042,8 +1096,11 @@ class LiveTab(ttk.Frame):
         ty = (y if where == 'plot' else H * 0.4)
         anchor = 'nw' if xx < p.winfo_width() * 0.65 else 'ne'
         tx = xx + 12 if anchor == 'nw' else xx - 12
-        t = p.create_text(tx, ty + 10, text=txt, anchor=anchor, fill=TXT, font=('Segoe UI', 9), tags='hover')
+        t = p.create_text(tx, ty + 10, text=txt, anchor=anchor, fill=TXT, font=('Segoe UI', fs(9)), tags='hover')
         bb = p.bbox(t)
+        if bb and bb[3] > H - p.mb - 6:
+            p.move(t, 0, (H - p.mb - 6) - bb[3])
+            bb = p.bbox(t)
         if bb:
             r = p.create_rectangle(bb[0] - 6, bb[1] - 4, bb[2] + 6, bb[3] + 4, fill=PANEL2, outline=LINE, tags='hover')
             p.tag_lower(r, t)
@@ -1187,7 +1244,7 @@ class LiveTab(ttk.Frame):
         self.sg.delete('all')
         self.sg_img = tk.PhotoImage(width=w, height=H)
         self.sg.create_image(self.sg_x0, 0, image=self.sg_img, anchor='nw')
-        self.sg_lbl = self.sg.create_text(6, 4, text='Spectro\ngraph\n\nnewest\non top', anchor='nw', fill=DIM, font=('Segoe UI', 7))
+        self.sg_lbl = self.sg.create_text(6, 4, text='Spectro\ngraph\n\nnewest\non top', anchor='nw', fill=DIM, font=('Segoe UI', fs(7)))
 
     def sg_push(self, fl, lv):
         if self.sg_img is None:
@@ -1493,20 +1550,20 @@ class CalDialog(tk.Toplevel):
         self.app = app
         self.title('Calibrate mic')
         self.configure(bg=PANEL)
-        self.geometry('600x560')
+        self.geometry(f'{px(600)}x{px(560)}')
         self.out_stream = None
         app.cal_open = True  # a calibrator tone is not feedback: pause the feedback detector meanwhile
         self.transient(app)
         nb = ttk.Notebook(self)
         nb.pack(fill='both', expand=True, padx=8, pady=8)
         ttk.Label(self, text=f'Device: {app.dev_name}. Calibrations are saved per device in {SETTINGS}.',
-                  style='Dim.TLabel', wraplength=520).pack(padx=8, pady=(0, 8), anchor='w')
+                  style='Dim.TLabel', wraplength=px(520)).pack(padx=8, pady=(0, 8), anchor='w')
 
         # --- acoustic calibrator
         f1 = ttk.Frame(nb, style='Panel.TFrame', padding=12)
         nb.add(f1, text='Calibrator')
         ttk.Label(f1, text='Put the acoustic calibrator on the measurement mic, switch it on, then press Measure. '
-                           'Keep it steady for 3 seconds.', style='Panel.TLabel', wraplength=500, justify='left').pack(anchor='w')
+                           'Keep it steady for 3 seconds.', style='Panel.TLabel', wraplength=px(500), justify='left').pack(anchor='w')
         r = ttk.Frame(f1, style='Panel.TFrame')
         r.pack(anchor='w', pady=10)
         self.lvl = tk.StringVar(value='94')
@@ -1518,7 +1575,7 @@ class CalDialog(tk.Toplevel):
             ttk.Radiobutton(r, text=f'{v} Hz', value=v, variable=self.cfreq).pack(side='left', padx=4)
         ttk.Button(f1, text='Measure (3 s)', style='Accent.TButton', command=self.measure_cal).pack(anchor='w')
         ttk.Label(f1, text='No calibrator? Use the Virtual calibrator tab.', style='Dim.TLabel').pack(anchor='w', pady=10)
-        self.msg1 = ttk.Label(f1, text='', style='Panel.TLabel', wraplength=500, justify='left')
+        self.msg1 = ttk.Label(f1, text='', style='Panel.TLabel', wraplength=px(500), justify='left')
         self.msg1.pack(anchor='w', pady=6)
 
         self._build_virtual(nb)
@@ -1527,7 +1584,7 @@ class CalDialog(tk.Toplevel):
         f2 = ttk.Frame(nb, style='Panel.TFrame', padding=12)
         nb.add(f2, text='Match a meter')
         ttk.Label(f2, text='Place a trusted SPL meter right next to the mic, play steady pink noise, and type the meter reading. '
-                           'Use the same weighting on both.', style='Panel.TLabel', wraplength=500, justify='left').pack(anchor='w')
+                           'Use the same weighting on both.', style='Panel.TLabel', wraplength=px(500), justify='left').pack(anchor='w')
         r = ttk.Frame(f2, style='Panel.TFrame')
         r.pack(anchor='w', pady=10)
         self.meter_val = tk.StringVar(value='')
@@ -1537,14 +1594,14 @@ class CalDialog(tk.Toplevel):
         for w in ('A', 'C', 'Z'):
             ttk.Radiobutton(r, text=w, value=w, variable=self.meter_w).pack(side='left', padx=3)
         ttk.Button(f2, text='Match (averages 3 s)', style='Accent.TButton', command=self.match_meter).pack(anchor='w')
-        self.msg2 = ttk.Label(f2, text='', style='Panel.TLabel', wraplength=500)
+        self.msg2 = ttk.Label(f2, text='', style='Panel.TLabel', wraplength=px(500))
         self.msg2.pack(anchor='w', pady=6)
 
         # --- manual
         f3 = ttk.Frame(nb, style='Panel.TFrame', padding=12)
         nb.add(f3, text='Manual offset')
         ttk.Label(f3, text='Offset = dB SPL that a full-scale (0 dBFS RMS) signal would read. Default 120.',
-                  style='Panel.TLabel', wraplength=500).pack(anchor='w')
+                  style='Panel.TLabel', wraplength=px(500)).pack(anchor='w')
         self.man = tk.StringVar(value=f'{app.cal:.1f}')
         ttk.Entry(f3, textvariable=self.man, width=10).pack(anchor='w', pady=10)
         ttk.Button(f3, text='Apply', command=self.manual).pack(anchor='w')
@@ -1555,10 +1612,10 @@ class CalDialog(tk.Toplevel):
         nb.add(f4, text='Mic file')
         ttk.Label(f4, text='Load the frequency response file that came with your measurement mic (UMIK-1, Dayton, '
                            'Sonarworks and similar text files: one "frequency dB" pair per line). '
-                           'The RTA, FFT and SPL are corrected with it.', style='Panel.TLabel', wraplength=500, justify='left').pack(anchor='w')
+                           'The RTA, FFT and SPL are corrected with it.', style='Panel.TLabel', wraplength=px(500), justify='left').pack(anchor='w')
         ttk.Button(f4, text='Load mic file…', command=self.load_file).pack(anchor='w', pady=10)
         ttk.Button(f4, text='Remove mic file', command=self.remove_file).pack(anchor='w')
-        self.msg4 = ttk.Label(f4, text='', style='Panel.TLabel', wraplength=500, justify='left')
+        self.msg4 = ttk.Label(f4, text='', style='Panel.TLabel', wraplength=px(500), justify='left')
         self.msg4.pack(anchor='w', pady=6)
         if app.mic_corr is not None:
             self.msg4.config(text=f'Loaded: {len(app.mic_corr[0])} points, {app.mic_corr[0][0]:.0f} Hz to {app.mic_corr[0][-1]:.0f} Hz.')
@@ -1574,7 +1631,7 @@ class CalDialog(tk.Toplevel):
         f = ttk.Frame(nb, style='Panel.TFrame', padding=12)
         nb.add(f, text='Virtual calibrator')
         ttk.Label(f, text='A calibrator built into the program: it makes the same steady tone as a real acoustic '
-                          'calibrator (94, 104 or 114 dB at 1 kHz or 250 Hz).', style='Panel.TLabel', wraplength=550,
+                          'calibrator (94, 104 or 114 dB at 1 kHz or 250 Hz).', style='Panel.TLabel', wraplength=px(550),
                   justify='left').pack(anchor='w')
         r = ttk.Frame(f, style='Panel.TFrame')
         r.pack(anchor='w', pady=8)
@@ -1618,9 +1675,9 @@ class CalDialog(tk.Toplevel):
         self.vread = ttk.Label(f, text='--.- dB', style='Big.TLabel')
         self.vread.pack(anchor='w')
         self.vread2 = ttk.Label(f, text='The analyzer reading at the tone frequency shows here while the tone plays.',
-                                style='Dim.TLabel', wraplength=550, justify='left')
+                                style='Dim.TLabel', wraplength=px(550), justify='left')
         self.vread2.pack(anchor='w')
-        self.vmsg = ttk.Label(f, text='', style='Panel.TLabel', wraplength=550, justify='left')
+        self.vmsg = ttk.Label(f, text='', style='Panel.TLabel', wraplength=px(550), justify='left')
         self.vmsg.pack(anchor='w', pady=6)
         self.after(250, self.virtual_meter)
 
@@ -1826,7 +1883,6 @@ def parse_mic_file(path):
 
 
 # ================================================================= walkthrough widget
-WALK_FONT = ('Segoe UI', 12)
 # menu paths like "Main Menu > Matrix" and quoted button names are highlighted in the walkthroughs
 UI_PATH = re.compile(r'[A-Z][\w&/…\-]*(?: [A-Z0-9&][\w&/…\-]*)*(?: > [A-Z0-9&"][\w&/…\-"]*(?: [A-Z0-9&][\w&/…\-]*)*)+|"[^"]{1,40}"')
 SENTENCE = re.compile(r'(?<=[.!?:])\s+(?=[A-Z"(])')
@@ -1835,20 +1891,20 @@ SENTENCE = re.compile(r'(?<=[.!?:])\s+(?=[A-Z"(])')
 class Walk(ttk.Frame):
     """Step-by-step tutorial panel: step list, large readable text, pictures and tips."""
 
-    def __init__(self, master, steps, extra=None, shots=None, on_done=None, img_w=500, **kw):
+    def __init__(self, master, steps, extra=None, shots=None, on_done=None, img_w=None, **kw):
         super().__init__(master, style='Panel.TFrame', padding=10, **kw)
         self.steps, self.extra, self.i = steps, extra, 0
         self.shots = shots or {}
         self.imgs = {}
         self.on_done = on_done
-        self.img_w = img_w
+        self.img_w = img_w or px(500)
         self.count = ttk.Label(self, text='', style='Dim.TLabel')
         self.count.pack(anchor='w')
-        self.head = tk.Label(self, text='', bg=PANEL, fg=TXT, font=('Segoe UI', 15, 'bold'), anchor='w', justify='left')
+        self.head = tk.Label(self, text='', bg=PANEL, fg=TXT, font=('Segoe UI', fs(15), 'bold'), anchor='w', justify='left')
         self.head.pack(fill='x')
         self.head.bind('<Configure>', lambda e: self.head.config(wraplength=max(200, e.width - 4)))
         self.lb = tk.Listbox(self, height=5, bg=PANEL2, fg=TXT, selectbackground='#2c7a7b', relief='flat',
-                             highlightthickness=0, activestyle='none', font=('Segoe UI', 11))
+                             highlightthickness=0, activestyle='none', font=('Segoe UI', fs(11)))
         self.lb.pack(fill='x', pady=8)
         self.lb.bind('<<ListboxSelect>>', lambda e: self.lb.curselection() and self.go(self.lb.curselection()[0]))
         nav = ttk.Frame(self, style='Panel.TFrame')
@@ -1857,7 +1913,7 @@ class Walk(ttk.Frame):
         self.back_btn.pack(side='left')
         self.next_btn = ttk.Button(nav, text='Next  ▶', style='Accent.TButton', command=self.next)
         self.next_btn.pack(side='right')
-        self.txt = tk.Text(self, bg=PANEL, fg=TXT, relief='flat', wrap='word', font=WALK_FONT, highlightthickness=0, height=14,
+        self.txt = tk.Text(self, bg=PANEL, fg=TXT, relief='flat', wrap='word', font=('Segoe UI', fs(12)), highlightthickness=0, height=14,
                            padx=6, pady=4, spacing1=2, spacing2=3, cursor='arrow')
         sb = ttk.Scrollbar(self, command=self.txt.yview)
         self.txt.config(yscrollcommand=sb.set)
@@ -1866,12 +1922,12 @@ class Walk(ttk.Frame):
         self.txt.bind('<MouseWheel>', lambda e: self.txt.yview_scroll(int(-e.delta / 120), 'units'))
         t = self.txt
         t.tag_configure('para', spacing3=10)
-        t.tag_configure('ui', foreground=PEAK, font=('Segoe UI', 12, 'bold'))
-        t.tag_configure('val', foreground=PEAK, background=PANEL2, font=('Segoe UI', 12, 'bold'), lmargin1=8, lmargin2=8,
+        t.tag_configure('ui', foreground=PEAK, font=('Segoe UI', fs(12), 'bold'))
+        t.tag_configure('val', foreground=PEAK, background=PANEL2, font=('Segoe UI', fs(12), 'bold'), lmargin1=8, lmargin2=8,
                         rmargin=8, spacing1=6, spacing3=6)
-        t.tag_configure('tiphead', foreground=AVG, font=('Segoe UI', 12, 'bold'), spacing1=10, spacing3=4)
+        t.tag_configure('tiphead', foreground=AVG, font=('Segoe UI', fs(12), 'bold'), spacing1=10, spacing3=4)
         t.tag_configure('tip', foreground=AVG, lmargin1=10, lmargin2=28, spacing3=6)
-        t.tag_configure('cap', foreground=DIM, font=('Segoe UI', 10, 'italic'), spacing3=10)
+        t.tag_configure('cap', foreground=DIM, font=('Segoe UI', fs(10), 'italic'), spacing3=10)
         self.set_steps(steps)
 
     def next(self):
@@ -1951,7 +2007,7 @@ class Walk(ttk.Frame):
             try:
                 full = tk.PhotoImage(data=S21IMG[key], format='png')
                 w = full.width()
-                z, d = next(((z, d) for z, d in ((1, 1), (2, 3), (1, 2), (1, 3), (1, 4)) if w * z / d <= self.img_w), (1, 4))
+                z, d = next(((z, d) for z, d in ((1, 1), (3, 4), (2, 3), (1, 2), (1, 3), (1, 4)) if w * z / d <= self.img_w), (1, 4))
                 small = full if (z, d) == (1, 1) else (full.zoom(z, z).subsample(d, d) if z > 1 else full.subsample(d, d))
                 self.imgs[key] = (full, small)
             except Exception:
@@ -1964,7 +2020,7 @@ class Walk(ttk.Frame):
         w.configure(bg=BG)
         tk.Label(w, image=im, bg=BG).pack(padx=8, pady=8)
         tk.Label(w, text=cap, bg=BG, fg=TXT, wraplength=min(1100, im.width()), justify='left',
-                 font=('Segoe UI', 10)).pack(padx=8, pady=(0, 8))
+                 font=('Segoe UI', fs(10))).pack(padx=8, pady=(0, 8))
         w.bind('<Escape>', lambda e: w.destroy())
         w.bind('<Button-1>', lambda e: w.destroy())
 
@@ -2103,17 +2159,17 @@ class RoomTab(ttk.Frame):
         self.msg.pack(side='left', padx=8)
         plots = ttk.Frame(left)
         plots.pack(fill='both', expand=True, pady=(6, 0))
-        self.fr = Plot(plots, -30, 12, ylabel='dB (1/6 oct)', height=230)
+        self.fr = Plot(plots, -30, 12, ylabel='dB (1/6 oct)', height=px(230))
         self.fr.pack(fill='both', expand=True)
-        self.dec = Plot(plots, -70, 0, xmin=0, xmax=2.0, logx=False, ylabel='dB decay', height=200, xlabel='s')
+        self.dec = Plot(plots, -70, 0, xmin=0, xmax=2.0, logx=False, ylabel='dB decay', height=px(200), xlabel='s')
         self.dec.pack(fill='both', expand=True, pady=(6, 0))
-        self.table = tk.Text(left, height=11, bg=PANEL, fg=TXT, relief='flat', font=('Consolas', 10), highlightthickness=0, wrap='none')
+        self.table = tk.Text(left, height=11, bg=PANEL, fg=TXT, relief='flat', font=('Consolas', fs(10)), highlightthickness=0, wrap='none')
         self.table.pack(fill='x', pady=(6, 0))
-        right = ttk.Frame(self, width=470)
+        right = ttk.Frame(self, width=px(470))
         right.pack(side='right', fill='both', padx=(8, 0))
         right.pack_propagate(False)
         left.pack(side='left', fill='both', expand=True)
-        self.advice = tk.Text(right, height=10, bg=PANEL, fg=TXT, relief='flat', wrap='word', font=('Segoe UI', 11), highlightthickness=0,
+        self.advice = tk.Text(right, height=10, bg=PANEL, fg=TXT, relief='flat', wrap='word', font=('Segoe UI', fs(11)), highlightthickness=0,
                               padx=8, pady=6)
         self.advice.pack(fill='x')
         gh = ttk.Frame(right, style='Panel.TFrame', padding=(10, 8))
@@ -2121,11 +2177,11 @@ class RoomTab(ttk.Frame):
         ttk.Label(gh, text='Measurement guide', style='H.TLabel').pack(side='left')
         self.walk_btn = ttk.Button(gh, text='Hide', command=lambda: self.show_walk(not self.walk.winfo_ismapped()))
         self.walk_btn.pack(side='right')
-        self.advice.tag_configure('h', foreground=TRACE, font=('Segoe UI', 11, 'bold'))
+        self.advice.tag_configure('h', foreground=TRACE, font=('Segoe UI', fs(11), 'bold'))
         self.advice.insert('end', 'Room advisor\n', 'h')
         self.advice.insert('end', 'Press Measure. The simulated room works without hardware; for a real room pick "Speaker + mic", '
                                   'choose the output that feeds a speaker and use your measurement mic as the input device (top bar).')
-        self.walk = Walk(right, TUT['WALK'], on_done=lambda: self.show_walk(False), img_w=430)
+        self.walk = Walk(right, TUT['WALK'], on_done=lambda: self.show_walk(False), img_w=px(430))
         self.walk.pack(fill='both', expand=True)
         if not app.settings.get('ui', {}).get('walk_room', True):
             self.show_walk(False, save=False)
@@ -2347,7 +2403,7 @@ class CrowdTab(ttk.Frame):
         fb.pack(fill='x')
         ttk.Label(fb, text='Delay finder', style='H.TLabel').grid(row=0, column=0, sticky='w')
         ttk.Label(fb, text='Input 1 = reference (band mix), input 2 = crowd mic. Choose "Microphone / interface" in the top bar, '
-                           'or "Simulated crowd mic" to try it.', style='Dim.TLabel', wraplength=640).grid(row=1, column=0, columnspan=6, sticky='w')
+                           'or "Simulated crowd mic" to try it.', style='Dim.TLabel', wraplength=px(640)).grid(row=1, column=0, columnspan=6, sticky='w')
         ttk.Label(fb, text='Reference', style='Dim.TLabel').grid(row=2, column=0, sticky='w', pady=6)
         ttk.Combobox(fb, textvariable=self.ref, values=['Console band mix (best)', 'Mic at the PA'], state='readonly', width=24).grid(row=2, column=1, sticky='w')
         ttk.Label(fb, text='PA-to-ref-mic distance m', style='Dim.TLabel').grid(row=2, column=2, padx=(10, 2))
@@ -2362,7 +2418,7 @@ class CrowdTab(ttk.Frame):
         self.name = tk.StringVar(value='Crowd L')
         ttk.Entry(bb, textvariable=self.name, width=14).pack(side='left', padx=(12, 4))
         ttk.Button(bb, text='Add to list', style='Accent.TButton', command=self.add_measured).pack(side='left')
-        self.corr = Plot(left, -1, 1, xmin=-100, xmax=400, logx=False, ylabel='corr', height=170, xlabel='ms')
+        self.corr = Plot(left, -1, 1, xmin=-100, xmax=400, logx=False, ylabel='corr', height=px(170), xlabel='ms')
         self.corr.pack(fill='x', pady=6)
         # calculator + list
         row = ttk.Frame(left)
@@ -2392,15 +2448,15 @@ class CrowdTab(ttk.Frame):
         self.tree = ttk.Treeview(lst, columns=('name', 'meas', 'pol', 'set'), show='headings', height=5)
         for c, t, w in (('name', 'Mic', 90), ('meas', 'Measured', 70), ('pol', 'Polarity', 64), ('set', 'Set delay', 70)):
             self.tree.heading(c, text=t)
-            self.tree.column(c, width=w, minwidth=50, anchor='w')
+            self.tree.column(c, width=px(w), minwidth=px(50), anchor='w')
         self.tree.pack(fill='both', expand=True, pady=6)
         lb = ttk.Frame(lst, style='Panel.TFrame')
         lb.pack(fill='x')
         ttk.Button(lb, text='Remove selected', command=self.remove).pack(side='left')
-        self.band_lbl = ttk.Label(lb, text='', style='Dim.TLabel', wraplength=330, justify='left')
+        self.band_lbl = ttk.Label(lb, text='', style='Dim.TLabel', wraplength=px(330), justify='left')
         self.band_lbl.pack(side='left', padx=10)
         # tutorial
-        right = ttk.Frame(self, width=520)
+        right = ttk.Frame(self, width=px(520))
         self.right = right
         right.pack(side='right', fill='both', padx=(8, 0))
         right.pack_propagate(False)
@@ -2567,6 +2623,7 @@ class CrowdTab(ttk.Frame):
 
 
 def main():
+    enable_dpi_awareness()
     app = App()
     if SD_ERR:
         app.after(600, lambda: app.status.config(text='No audio I/O (' + SD_ERR[:50] + '): demo sources only'))
