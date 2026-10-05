@@ -1,8 +1,9 @@
-FOH Analyzer - Python desktop version 1.0
+FOH Analyzer - Python desktop version 1.1
 =========================================
 
 What it does
-- Live tab: RTA (1/1 to 1/24 octave) with FFT line, averaging, peak hold and freeze;
+- Live tab: RTA (1/1 to 1/24 octave) and high-resolution FFT spectrum (View: RTA + spectrum,
+  RTA bars or Spectrum), scrolling spectrograph, averaging, peak hold and freeze, about 30 fps;
   SPL meter A/C/Z with Fast/Slow/Impulse, Leq, Max and Peak; 60 s SPL history;
   Mix advisor (feedback/ringing, mud, boom, harsh, sibilance, dull top, clipping, low dynamics).
   Tips stay on screen 5/15/30/60 s after the problem clears; the advisor can be hidden.
@@ -13,6 +14,7 @@ What it does
   curves, T20/T30/EDT, C50/C80/D50, background noise, room advisor and a 9-step walkthrough.
 - Crowd mic delay tab: two-channel delay finder (input 1 = band mix, input 2 = crowd mic) with
   polarity check, distance calculator, crowd mic list and the General / DiGiCo S21 walkthroughs.
+  The S21 steps include screenshots from the DiGiCo offline editor (click to enlarge).
 
 Windows: how to start
 1. Install Python 3 from https://www.python.org/downloads/ (tick "Add python.exe to PATH").
@@ -28,5 +30,4 @@ in Source to try everything.
 Notes
 - SPL numbers are only real after you calibrate (until then an assumed offset is used).
 - For the crowd mic delay finder the audio interface must give two separate input channels.
-- This version has not yet been tested with real audio hardware. The S21 walkthrough is text
-  only (no DiGiCo screenshots).
+- This version has not yet been tested with real audio hardware.
