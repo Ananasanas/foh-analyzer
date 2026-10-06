@@ -189,6 +189,7 @@ input[type=text]{background:var(--panel2);border:1px solid var(--line);border-ra
 .meters2 .fill{background:linear-gradient(90deg,var(--ok) 0 80%,var(--warn) 80% 93%,var(--crit) 93%)}
 .wfig{margin:4px 0 2px;max-width:760px}.wfig svg{max-width:560px}.shot{margin:10px 0 4px}.shot img{width:100%;height:auto;display:block;border-radius:6px;border:1px solid var(--line)}.shot figcaption{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.4}.wfig svg{width:100%;height:auto;display:block}.wfig text{font-family:var(--f-body);font-size:11px;fill:var(--muted)}
 .wnote{font-size:12px;color:var(--muted);border-left:2px solid var(--dim);padding-left:8px}
+.wchk{border:1px solid var(--line);border-radius:6px;padding:10px 12px;display:grid;gap:8px;background:var(--panel)}.wchk .chkhead{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:15px}.wchk .chk{display:flex;gap:8px;align-items:flex-start;font-size:14px}.wchk .chk label{display:flex;gap:8px;align-items:flex-start;cursor:pointer}.wchk .chk input{width:18px;height:18px;margin:2px 0 0;accent-color:var(--ok)}.wchk .ic{width:18px;text-align:center;font-weight:700;color:var(--dim)}.wchk .det{font-size:12.5px;color:var(--muted)}.wchk .ok .ic,.wchk .ok .det{color:var(--ok)}.wchk .bad .ic,.wchk .bad .det{color:var(--crit)}
 .wtips{margin:0;padding-left:18px;font-size:12.5px;color:var(--muted);display:grid;gap:3px}
 @media (prefers-reduced-motion:reduce){.meter .fill{transition:none}}
 </style>
@@ -389,12 +390,13 @@ input[type=text]{background:var(--panel2);border:1px solid var(--line);border-ra
   <section id="delayTab" class="roomgrid" aria-label="Crowd mic delay" hidden>
     <div class="rmain">
       <section class="panel walk" aria-label="Crowd mic delay tutorial">
-        <h2><span>Tutorial <span class="num" id="dwCount" style="letter-spacing:0;font-size:12px"></span></span><span style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="seg" id="dwTut" role="group" aria-label="Tutorial"><button type="button" data-t="gen">General</button><button type="button" data-t="s21">DiGiCo S21</button></span><button type="button" class="btn" id="dwToggle">Hide</button></span></h2>
+        <h2><span>Tutorial <span class="num" id="dwCount" style="letter-spacing:0;font-size:12px"></span></span><span style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="seg" id="dwTut" role="group" aria-label="Tutorial"><button type="button" data-t="gen">General</button><button type="button" data-t="s21">DiGiCo S21</button><button type="button" data-t="sc">S21 + Scarlett</button></span><button type="button" class="btn" id="dwToggle">Hide</button></span></h2>
         <div class="wbody" id="dwBody">
           <ol class="wsteps" id="dwSteps"></ol>
           <div class="wcard">
             <div class="wtitle" id="dwTitle"></div>
             <div class="wtext" id="dwText"></div>
+            <div class="wchk" id="dwChk" hidden></div>
             <div class="wfig" id="dwFig" hidden></div>
             <ul class="wtips" id="dwTips"></ul>
             <div class="wnote" id="dwNote" hidden></div>
@@ -2560,7 +2562,7 @@ async function dfStart() {
       const tr = DL.stream.getAudioTracks()[0], chs = (tr.getSettings && tr.getSettings().channelCount) || 0;
       const src = ctx.createMediaStreamSource(DL.stream); DL.nodes.push(src);
       src.connect(split);
-      DL.monoWarn = chs === 1;
+      DL.monoWarn = chs === 1; DL.chs = chs; DL.devLabel = tr.label || '';
       setDfStat(chs === 1
         ? 'This input delivered only one channel. Choose a stereo or multichannel interface (input 1 and 2), or both channels will read the same signal.'
         : 'Listening on ' + (tr.label || 'the interface') + '. Play program or pink noise through the PA.', chs === 1 ? 'warn' : 'ok');
@@ -2599,7 +2601,7 @@ function dfProcess() {
   DL.an[0].getFloatTimeDomainData(DL.buf[0]); DL.an[1].getFloatTimeDomainData(DL.buf[1]);
   const rms = DL.buf.map(b => { let s = 0; for (let i = 0; i < b.length; i++) s += b[i] * b[i]; return 10 * log10(s / b.length + 1e-20); });
   const pk = DL.buf.map(b => { let m = 0; for (let i = 0; i < b.length; i++) m = Math.max(m, Math.abs(b[i])); return 20 * log10(m + 1e-12); });
-  DL.levels = [pk[refI], pk[crI]];
+  DL.levels = [pk[refI], pk[crI]]; scTrack(pk[refI], pk[crI]);
   if (rms[refI] < -75 || rms[crI] < -75) { DL.quiet = rms[refI] < -75 ? 'reference' : 'crowd mic'; return; }
   DL.quiet = null;
   const xr = new Float64Array(DM), xi = new Float64Array(DM), yr = new Float64Array(DM), yi = new Float64Array(DM);
@@ -2783,9 +2785,129 @@ const DWALK = [
   { t: 'Fine-tune by ear', x: 'Solo the reference and one crowd mic at similar levels. Nudge the delay ±0.5 ms and the polarity until the low end sounds fullest and the sound stops "swirling". Then set the crowd level so it adds space without smearing the drums.', done: () => DL.seen8 },
   { t: 'Re-check during the show', x: 'Sound slows down in cold air and speeds up in heat: at 30 m a 10 °C change moves the delay by about 1.5 ms. Re-measure after doors when the room warms up, and whenever the PA or the mics move.', done: () => false }
 ];
+// ==SC-BEGIN==
+// ---------- S21 + Scarlett walkthrough with live checks ----------
+const SC = [{"t": "What you need", "x": "This guide measures each crowd mic against the band mix with a Focusrite Scarlett 2i2 and then sets the delays on the DiGiCo S21, one mic at a time. Every step has checks at the bottom: the green ticks with a live test are confirmed by the app listening to the Scarlett, the tick boxes are things only you can see on the console.\nInput 1 of the Scarlett carries the band mix (the reference). Input 2 carries one crowd mic at a time.\nIf you use a different Scarlett (Solo, 4i4, 8i6…), the steps are the same: use its first two line inputs.", "tips": ["The routing on the S21 (BAND BC group, BCAST matrix) is explained in the DiGiCo S21 guide, step 1. Set that up first."], "checks": [["t:iface", "Scarlett 2i2 and its USB cable"], ["t:cables", "Two balanced cables: XLR female to 6.35 mm TRS jack"], ["t:routing", "BAND BC group and BCAST matrix are set up on the S21"]]}, {"t": "Connect the Scarlett to the laptop", "x": "Plug the Scarlett into the laptop with its USB cable. The USB light comes on.\nOn Windows, install Focusrite Control (or Focusrite Control 2 for a 4th gen) from focusrite.com once: it brings the driver.\nIn Windows open Settings > System > Sound > More sound settings > Recording. Open the Scarlett (\"Analogue 1 + 2\" or \"Focusrite USB\") > Properties > Advanced and choose 2 channel, 24 bit, 48000 Hz. Turn off any enhancements.\nPython app: in the top bar choose Source \"Microphone / interface\" and pick the Scarlett in Input device (the one with \"2 in\").\nBrowser app: choose Mic in the top bar, pick the Scarlett in the microphone menu, then press Start in the delay finder with \"Interface, 2 channels\" on.", "tips": ["Windows can block the mic: Settings > Privacy & security > Microphone, allow desktop apps (and your browser).", "No Scarlett in the list? Unplug and replug the USB cable, then press the refresh button (↻) next to Input device."], "checks": [["dev", "The app is listening to the Scarlett"], ["two", "Two separate input channels arrive"]]}, {"t": "Set up the Scarlett front panel", "x": "Before any cable goes in, set the Scarlett so it takes a line signal cleanly.\n1. 48V off. A console output does not need phantom power.\n2. INST off on input 1 and input 2 (the button is not lit). The jack socket is then a line input.\n3. Air off on both inputs. It adds treble and changes the measurement.\n4. Turn both Gain knobs fully down (anticlockwise).\n5. Direct Monitor off, so your headphones only play what the laptop plays.", "tips": ["4th gen: do not press Auto Gain while you measure. Set the gain once in step 6 and leave it.", "Safe mode on a 4th gen can stay on: it only lowers the gain if a peak gets near clipping."], "checks": [["t:48v", "48V is off"], ["t:inst", "INST is off on input 1 and input 2"], ["t:air", "Air is off on both inputs"], ["t:gain", "Both Gain knobs are fully down"], ["t:dm", "Direct Monitor is off"]]}, {"t": "Patch the S21 outputs", "x": "Send the band mix to local out 1 and one crowd mic to local out 2.\n1. Band mix: tap the BAND BC group name to open Channel Setup, tap Outputs > Direct Outputs, choose Local I/O > Analogue and tap Out 1.\n2. Crowd mic: open Main Menu > Matrix, pick a free matrix input, tap \"No Input\" and choose Internal > Channel Outputs > your first crowd mic channel.\n3. Send that matrix input only to one spare matrix and name it \"MEAS\". Bring its send and the MEAS master up to 0 dB.\n4. Open the MEAS matrix (tap its name), Outputs > Direct Outputs, Local I/O > Analogue, tap Out 2.", "tips": ["Do not route the crowd mics to BAND BC, not even while measuring. Input 1 must carry the band only.", "Both signals pass through the console the same way, so the console latency cancels out of the measurement."], "checks": [["t:out1", "BAND BC is patched to Local Out 1"], ["t:out2", "MEAS (one crowd mic only) is patched to Local Out 2"], ["t:nocrowd", "No crowd mic is routed to BAND BC"]]}, {"t": "Cable the S21 to the Scarlett", "x": "Use the XLR female to TRS jack cables.\n1. Local Out 1 (XLR) to the jack hole in the middle of Scarlett input 1.\n2. Local Out 2 (XLR) to the jack hole in the middle of Scarlett input 2.\nPlug the jacks into the centre hole of the combo socket, not as an XLR: the jack is the line input and takes the console level without overloading.", "tips": ["Only XLR to XLR cables? It works with the Gain knobs fully down, but turn the MEAS and BAND BC levels down a little if the gain halo turns red."], "checks": [["t:c1", "Local Out 1 goes to Scarlett input 1"], ["t:c2", "Local Out 2 goes to Scarlett input 2"]]}, {"t": "Play program and set the levels", "x": "Play music or pink noise through the PA at a normal show level, with the band channels feeding BAND BC.\n1. Slowly turn up Scarlett Gain 1 until the halo around it is green and the app shows input 1 at about −20 dBFS.\n2. Do the same with Gain 2 for input 2. The crowd mic is often quieter: that is fine, it only has to be well above the noise.\n3. Never let a halo turn red. Turn that Gain back down if it does.\nThe checks below turn green when both inputs sit between −30 and −6 dBFS without clipping.", "tips": ["Still too quiet with the Gain fully up? Raise the BAND BC or MEAS output level on the console instead."], "checks": [["sig1", "Signal on input 1 (band mix)"], ["sig2", "Signal on input 2 (crowd mic)"], ["lvl", "Both levels between −30 and −6 dBFS, no clipping"]]}, {"t": "Test which input is which", "x": "This proves input 2 really is the crowd mic and not the band.\n1. With program still playing, mute the MEAS matrix (or pull its fader down) for about 3 seconds.\n2. Input 2 must go quiet while input 1 keeps playing.\n3. Unmute MEAS. Input 2 comes back.", "tips": ["Input 1 went quiet instead? The cables are swapped. Swap them at the Scarlett and run the test again.", "Both stay on? The crowd mic is still in BAND BC, or MEAS is fed from the wrong source."], "checks": [["mute2", "Input 2 went quiet while input 1 kept playing"], ["back2", "Input 2 came back after unmuting"], ["diff", "The two inputs carry different signals"]]}, {"t": "Zero the delays first", "x": "Before measuring, make sure nothing is delayed yet.\n1. Tap each crowd mic channel name. In Channel Setup the Input Processing box must show 0.00 ms and the right side Delay Off.\n2. Do the same on the BAND BC group and the BCAST matrix.\n3. Set Input Polarity to Standard on every crowd mic channel.", "tips": ["Show delay in ms, not as a distance, so the numbers match this app."], "checks": [["t:z1", "Every crowd mic channel reads Delay Off or 0.00 ms"], ["t:z2", "BAND BC and BCAST read Delay Off or 0.00 ms"], ["t:z3", "Input Polarity is Standard on every crowd mic"]]}, {"t": "Measure each crowd mic", "x": "Measure the crowd mics one at a time.\n1. Wait until the delay finder reads good confidence and stays within ±0.2 ms.\n2. Type the crowd mic name and press Add to list.\n3. In Main Menu > Matrix tap the MEAS input source name and pick the next crowd mic channel. Only one crowd mic in MEAS at a time.\n4. Press Reset and repeat 1 to 3 for every crowd mic.", "tips": ["A downward spike means the mic is in reverse polarity. It is marked Ø in the list."], "checks": [["lock", "Steady reading: good confidence, within ±0.2 ms"], ["added", "At least one measured crowd mic is in the list"]]}, {"t": "Set the crowd channel delays", "x": "Do this one crowd mic at a time. First set \"Delay the band mix\" in the crowd mic list: the delay each mic needs is in its \"Set delay\" column and in the tips below.\n1. Pick the next crowd mic in the list and find its channel on the surface. Press Space for the Console Overview if you need to search.\n2. Tap the channel name at the top of the strip. Channel Setup opens. Check that the name at the top right (for example \"Input 11\") is that crowd mic.\n3. Tap the Input Processing box (the second box from the left, it shows the delay time).\n4. Press Delay On (the clock button on the left). It turns green.\n5. Drag the Input Delay slider close to the value, then turn the Delay encoder on the right (the mouse wheel in the offline editor) until the display shows the exact value, for example 23.4 ms.\n6. If the list marks the mic with reversed polarity (Ø), go back to Channel Setup and tap Input Polarity on the right so it no longer reads Standard.\n7. Tap X at the top right to close. The Input Processing box of that channel now shows the delay.\n8. Repeat 1 to 7 for the next crowd mic until every mic in the list is done. The farthest mic shows 0.0 ms: leave Delay Off on that one.\nThe crowd channels feed BCAST directly, so these delays go straight into the broadcast mix and never reach the PA or monitors.", "tips": [], "checks": [["permic", ""]]}, {"t": "Delay the band group", "x": "Now delay the band broadcast feed by the farthest crowd mic time.\n1. Find the BAND BC group (press Space for the Console Overview; groups are red) and tap its name.\n2. Tap Input Processing and press Delay On.\n3. Set the band delay shown under \"Your values\" (the largest measured time).\n4. Tap X to close. Leave the BCAST matrix at 0.", "tips": ["Never delay L/R or the band channels: that would delay the PA and the monitors.", "Tell the video team the audio is now later by this amount."], "checks": [["band", ""]]}, {"t": "Verify every crowd mic", "x": "Check the result with the delays on, one crowd mic at a time.\n1. Put the first crowd mic back in MEAS (Main Menu > Matrix) and press Reset in the delay finder.\n2. The finder should now read close to 0 ms (within ±0.5 ms) with normal polarity.\n3. If it reads off, change that channel's delay by the reading: a positive reading means add that much, a negative one means take it away.\n4. Tick the mic below, switch MEAS to the next crowd mic and repeat.", "tips": ["Off by about 1 to 3 ms on every mic? Check that BAND BC really has its delay switched on."], "checks": [["zero", "Reading within ±0.5 ms of zero"], ["pol", "Polarity reads normal"], ["permicv", ""]]}, {"t": "Save the delays", "x": "Delays are part of each snapshot, so store them.\n1. Main Menu > Session & Snapshots: press Update (✓) on every snapshot, or take Delay out of the recall scope in Global Scope.\n2. Save the session with File… and keep a copy on a USB stick.\n3. Re-measure after doors open: a warmer room makes the crowd mics arrive earlier.", "tips": ["Write the delays on a strip of tape on the console too."], "checks": [["t:snap", "Snapshots updated (or Delay taken out of the scope)"], ["t:save", "Session saved and copied to USB"]]}];
+const SC_SHOTS = (() => { const cap = {}; Object.values(S21SHOTS).forEach(l => l.forEach(([k, c]) => { if (!(k in cap)) cap[k] = c; })); const o = {}; Object.entries({"Patch the S21 outputs": ["mtxsrc", "mtxsetup", "outroute"], "Zero the delays first": ["grpsetup"], "Measure each crowd mic": ["mtxinputs"], "Set the crowd channel delays": ["chsetup", "inproc"], "Delay the band group": ["grpsetup"], "Save the delays": ["snapshots", "scope"]}).forEach(([t, ks]) => { const own = Object.fromEntries(S21SHOTS[t] || []); o[t] = ks.map(k => [k, own[k] || cap[k] || '']); }); return o; })();
+const SC_ACT = { 1: [['Start delay finder (Interface)', () => { DL.input = 'iface'; store.set('dfIn', 'iface'); DL.refCh = 0; store.set('dfRef', 0); dfStart(); }]], 8: [['Reset delay finder', () => dfReset()]], 11: [['Reset delay finder', () => dfReset()]] };
+const SCX = { latch: new Set(), flags: new Set(), q2: null, clip: [0, 0], lvT: 0, sig: null };
+DL.sc = store.get('scStep', 0);
+function scTrack(a, b) {
+  const now = performance.now(); SCX.lvT = now;
+  if (a >= -1) SCX.clip[0] = now; if (b >= -1) SCX.clip[1] = now;
+  if (b < -60 && a > -50) { SCX.q2 = SCX.q2 || now; if (now - SCX.q2 >= 1000) SCX.flags.add('mute2'); }
+  else { SCX.q2 = null; if (SCX.flags.has('mute2') && b > -50 && a > -50) SCX.flags.add('back2'); }
+}
+const dfStable = () => DL.hist.length >= 4 ? (() => { const m = DL.hist.reduce((a, b) => a + b, 0) / DL.hist.length; return Math.sqrt(DL.hist.reduce((a, b) => a + (b - m) ** 2, 0) / DL.hist.length); })() : null;
+function scItems(step) {
+  const out = [], max = crowdMax(), band = DL.align === 'band' && max != null ? max : 0;
+  step.checks.forEach(([id, lab]) => {
+    if (id === 'permic' || id === 'permicv') {
+      if (!DL.list.length) out.push(['nomics', 'Add the crowd mics to the list first (measure them in step 9)']);
+      DL.list.forEach(m => {
+        const d = max - m.ms;
+        if (id === 'permic') out.push([`t:pm:${m.name}:${d.toFixed(1)}`, (d >= 0.05 ? `${m.name}: Delay On at ${d.toFixed(1)} ms` : `${m.name}: farthest mic, Delay Off`) + (m.inv ? ', Input Polarity flipped' : '')]);
+        else out.push([`t:pv:${m.name}`, `${m.name}: verified near 0 ms`]);
+      });
+    } else if (id === 'band') out.push([`t:band:${band.toFixed(1)}`, band ? `BAND BC: Delay On at ${band.toFixed(1)} ms` : 'No band delay needed ("Align crowd mics" is chosen, or no mics in the list)']);
+    else out.push([id, lab]);
+  });
+  return out;
+}
+function scTest(id) {
+  const now = performance.now(), live = DL.running && now - SCX.lvT < 1500, lv = live && DL.levels ? DL.levels : [-120, -120];
+  const [a, b] = lv, R = DL.res, st = dfStable(), iface = DL.running && DL.input === 'iface', f0 = v => v.toFixed(0);
+  switch (id) {
+    case 'dev': return [iface && /scarlett|focusrite/i.test(DL.devLabel || ''), iface ? 'Listening to: ' + (DL.devLabel || 'unnamed input') : 'Pick the Scarlett, then Start the delay finder with "Interface, 2 channels"'];
+    case 'two': return [iface && DL.chs !== 1, iface ? (DL.chs ? DL.chs + ' channel(s)' : 'channel count not reported: step 7 confirms it') : 'Waiting for the Scarlett'];
+    case 'sig1': return [a > -50, live ? `peak ${f0(a)} dBFS` : 'delay finder not running'];
+    case 'sig2': return [b > -50, live ? `peak ${f0(b)} dBFS` : 'delay finder not running'];
+    case 'lvl': {
+      const c = [0, 1].filter(k => now - SCX.clip[k] < 3000);
+      if (c.length) return [false, 'CLIPPING on input ' + c.map(k => k + 1).join(' and ') + ': turn that Gain down'];
+      return [a >= -30 && a <= -6 && b >= -30 && b <= -6, `input 1 ${f0(a)} dBFS, input 2 ${f0(b)} dBFS`];
+    }
+    case 'mute2': return [SCX.flags.has('mute2'), `input 1 ${f0(a)}, input 2 ${f0(b)} dBFS`];
+    case 'back2': return [SCX.flags.has('back2'), SCX.flags.has('mute2') ? 'unmute MEAS' : 'do the mute first'];
+    case 'diff': { if (!R) return [false, 'needs signal on both inputs']; const same = Math.abs(R.ms) < 0.05 && R.conf > 50; return [!same && R.conf >= 8, same ? 'both inputs carry the same signal' : `confidence ${f0(R.conf)}`]; }
+    case 'lock': return [!!(R && R.conf >= 15 && st != null && st < 0.2), R ? `${(R.ms + dfOff()).toFixed(1)} ms, confidence ${f0(R.conf)}` + (st != null ? `, ±${st.toFixed(2)} ms` : '') : 'no reading yet'];
+    case 'added': { const n = DL.list.filter(m => (m.src || '').startsWith('measured')).length; return [n > 0, n + ' measured mic(s) in the list']; }
+    case 'zero': return [!!(R && Math.abs(R.ms + dfOff()) <= 0.5 && R.conf >= 15), R ? `reading ${(R.ms + dfOff()) >= 0 ? '+' : ''}${(R.ms + dfOff()).toFixed(1)} ms` : 'no reading yet'];
+    case 'pol': return [!!(R && !R.inverted && R.conf >= 15), R ? (R.inverted ? 'INVERTED: flip Input Polarity' : 'normal') : 'no reading yet'];
+  }
+  return [false, ''];
+}
+const scTicks = () => store.get('scTicks', {});
+function scDone(i) {
+  const t = scTicks();
+  return scItems(SC[i]).every(([id]) => id !== 'nomics' && (id.startsWith('t:') ? !!t[id] : SCX.latch.has(i + '|' + id)));
+}
+function renderSC() {
+  const cur = clamp(DL.sc || 0, 0, SC.length - 1); DL.sc = cur;
+  const doneN = SC.filter((s, i) => scDone(i)).length;
+  $('#dwCount').textContent = `· ${doneN} of ${SC.length} done`;
+  if (!DL.walkOpen) return;
+  const ol = $('#dwSteps'); ol.innerHTML = '';
+  SC.forEach((s, i) => { const li = document.createElement('li'); li.className = (i === cur ? 'cur ' : '') + (scDone(i) ? 'done' : ''); const b = document.createElement('button'); b.type = 'button'; b.textContent = s.t; b.addEventListener('click', () => { DL.sc = i; store.set('scStep', i); renderDWalk(); }); li.appendChild(b); ol.appendChild(li); });
+  const s = SC[cur];
+  $('#dwTitle').textContent = `Step ${cur + 1}. ${s.t}` + (scDone(cur) ? ' ✓' : '');
+  const wt = $('#dwText'); wt.textContent = '';
+  s.x.split('\n').forEach(line => { const d = document.createElement('div'); d.className = /^\d+\.\s/.test(line) ? 'wstep' : 'wpara'; d.textContent = line; wt.appendChild(d); });
+  const shots = SC_SHOTS[s.t] || [];
+  $('#dwFig').hidden = !shots.length;
+  $('#dwFig').innerHTML = shots.map(([k, c]) => `<figure class="shot"><img src="${S21IMG[k]}" alt="" loading="lazy"><figcaption>${c}<\/figcaption><\/figure>`).join('');
+  const tl = [...s.tips, ...(/delay/i.test(s.t) && DL.list.length ? crowdLines() : [])];
+  const tips = $('#dwTips'); tips.innerHTML = ''; tips.hidden = !tl.length; tl.forEach(t => { const li = document.createElement('li'); li.textContent = t; tips.appendChild(li); });
+  const note = $('#dwNote'); note.hidden = false;
+  note.textContent = 'Screenshots are from the DiGiCo S-Series Offline Editor, S21 software V3.1.1. Scarlett steps are written for the 2i2 (3rd and 4th gen).';
+  const act = $('#dwAct'); act.innerHTML = '';
+  (SC_ACT[cur] || []).forEach(([lab, fn]) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn primary'; b.textContent = lab; b.addEventListener('click', fn); act.appendChild(b); });
+  $('#dwPrev').disabled = cur === 0; $('#dwNext').disabled = cur === SC.length - 1;
+  SCX.sig = null; scUpdate();
+}
+function scUpdate() {
+  const box = $('#dwChk');
+  if (DL.tut !== 'sc' || !DL.walkOpen) { box.hidden = true; return; }
+  const i = DL.sc, items = scItems(SC[i]), sig = i + '#' + items.map(x => x[0]).join('|');
+  if (sig !== SCX.sig) {
+    SCX.sig = sig; box.hidden = false; box.innerHTML = '';
+    const h = document.createElement('div'); h.className = 'chkhead';
+    h.innerHTML = '<b id="scHead">Checks<\/b>';
+    if (items.some(([id]) => !id.startsWith('t:') && id !== 'nomics')) { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn'; b.textContent = 'Run tests again'; b.addEventListener('click', () => { SCX.latch.forEach(k => { if (k.startsWith(i + '|')) SCX.latch.delete(k); }); SCX.flags.clear(); SCX.q2 = null; dfReset(); scUpdate(); }); h.appendChild(b); }
+    box.appendChild(h);
+    const t = scTicks();
+    items.forEach(([id, lab]) => {
+      const row = document.createElement('div'); row.className = 'chk'; row.dataset.id = id;
+      if (id.startsWith('t:')) {
+        row.innerHTML = '<label><input type="checkbox"> <span><\/span><\/label>';
+        row.querySelector('span').textContent = lab; const cb = row.querySelector('input'); cb.checked = !!t[id];
+        cb.addEventListener('change', () => { const tt = scTicks(); if (cb.checked) tt[id] = true; else delete tt[id]; store.set('scTicks', tt); scUpdate(); });
+      } else {
+        row.innerHTML = '<span class="ic">○<\/span><div><div class="lab"><\/div><div class="det"><\/div><\/div>';
+        row.querySelector('.lab').textContent = lab;
+      }
+      box.appendChild(row);
+    });
+  }
+  box.querySelectorAll('.chk').forEach(row => {
+    const id = row.dataset.id; if (id.startsWith('t:')) return;
+    const ic = row.querySelector('.ic'), det = row.querySelector('.det');
+    if (id === 'nomics') { ic.textContent = '!'; row.className = 'chk bad'; det.textContent = ''; return; }
+    const [ok, txt] = scTest(id); if (ok) SCX.latch.add(i + '|' + id);
+    if (SCX.latch.has(i + '|' + id)) { ic.textContent = '✓'; row.className = 'chk ok'; det.textContent = 'passed' + (ok && txt && ['dev', 'two', 'sig1', 'sig2', 'lvl', 'lock', 'added', 'zero'].includes(id) ? ` (${txt})` : ''); }
+    else { const bad = /CLIP|INVERTED|same signal/.test(txt); ic.textContent = bad ? '✗' : '○'; row.className = 'chk' + (bad ? ' bad' : ''); det.textContent = txt; }
+  });
+  const d = scDone(i), hd = $('#scHead'); hd.textContent = d ? 'Checks: all passed, press Next' : 'Checks'; hd.style.color = d ? 'var(--ok)' : '';
+  const li = $('#dwSteps').children[i]; if (li) li.classList.toggle('done', d);
+  $('#dwTitle').textContent = `Step ${i + 1}. ${SC[i].t}` + (d ? ' ✓' : '');
+  $('#dwCount').textContent = `· ${SC.filter((s, k) => scDone(k)).length} of ${SC.length} done`;
+}
+// ==SC-END==
 function renderDWalk() {
   $('#dwBody').hidden = !DL.walkOpen; $('#dwToggle').textContent = DL.walkOpen ? 'Hide' : 'Show';
   document.querySelectorAll('#dwTut button').forEach(b => b.classList.toggle('on', b.dataset.t === DL.tut));
+  if (DL.tut !== 'sc') $('#dwChk').hidden = true;
+  if (DL.tut === 'sc') return renderSC();
   if (DL.tut === 's21') return renderS21();
   $('#dwNote').hidden = true;
   const done = DWALK.map(s => { try { return !!s.done(); } catch (e) { return false; } });
@@ -2856,9 +2978,9 @@ function renderS21() {
 }
 $('#dwTut').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; DL.tut = b.dataset.t; store.set('dTut', DL.tut); renderDWalk(); });
 $('#dwToggle').addEventListener('click', () => { DL.walkOpen = !DL.walkOpen; store.set('dWalkOpen', DL.walkOpen); renderDWalk(); });
-$('#dwPrev').addEventListener('click', () => { if (DL.tut === 's21') { DL.s21 = Math.max(0, DL.s21 - 1); store.set('s21Step', DL.s21); } else { DL.walk = Math.max(0, DL.walk - 1); store.set('dWalk', DL.walk); } renderDWalk(); });
-$('#dwNext').addEventListener('click', () => { if (DL.tut === 's21') { DL.s21 = Math.min(S21.length - 1, DL.s21 + 1); store.set('s21Step', DL.s21); } else { DL.walk = Math.min(DWALK.length - 1, DL.walk + 1); store.set('dWalk', DL.walk); } renderDWalk(); });
-setInterval(() => { if ($('#delayTab').hidden) return; renderDf(); if (DL.drawDirty || DL.running) { DL.drawDirty = false; drawDf(); } }, 200);
+$('#dwPrev').addEventListener('click', () => { if (DL.tut === 'sc') { DL.sc = Math.max(0, DL.sc - 1); store.set('scStep', DL.sc); } else if (DL.tut === 's21') { DL.s21 = Math.max(0, DL.s21 - 1); store.set('s21Step', DL.s21); } else { DL.walk = Math.max(0, DL.walk - 1); store.set('dWalk', DL.walk); } renderDWalk(); });
+$('#dwNext').addEventListener('click', () => { if (DL.tut === 'sc') { DL.sc = Math.min(SC.length - 1, DL.sc + 1); store.set('scStep', DL.sc); } else if (DL.tut === 's21') { DL.s21 = Math.min(S21.length - 1, DL.s21 + 1); store.set('s21Step', DL.s21); } else { DL.walk = Math.min(DWALK.length - 1, DL.walk + 1); store.set('dWalk', DL.walk); } renderDWalk(); });
+setInterval(() => { if ($('#delayTab').hidden) return; if (DL.tut === 'sc') scUpdate(); renderDf(); if (DL.drawDirty || DL.running) { DL.drawDirty = false; drawDf(); } }, 200);
 new ResizeObserver(() => { DL.drawDirty = true; }).observe($('#dfPlot').parentElement);
 syncDelay(); renderCalc(); crowdTable(); renderDWalk();
 
